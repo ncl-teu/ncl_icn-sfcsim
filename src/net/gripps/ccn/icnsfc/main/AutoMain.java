@@ -25,9 +25,9 @@ public class AutoMain {
 */
             //欲しい情報のカテゴリ：startVNF開始,
 
-            ISLog.getIns().log("Int., 0:Interest/1:CacheHit, prefix, SFCID, # of SFs, fromSFID@R_ID, toSFID, <-R/N+ID, Hop, Duration, @Host, @VM, @vCPU, TimeStamp");
-            ISLog.getIns().log("Data., 0: ProcReturn, 1: CacheReturn, prefix, Proc.Time, SFCID, fromSFID, R_ID->, toSFID@R/N+ID, Hop, " +
-                    "Duration, DataSize, @Host, @VM, @vCPU, TimeStamp");
+            ISLog.getIns().log(",Int., 0:Interest/1:CacheHit, SFCID, prefix, fromSFID@R_ID, toSFID, <-R/N+ID, Hop, Duration, @Host, @VM, @vCPU, TimeStamp");
+            ISLog.getIns().log(",Data., 0: ProcReturn/1: CacheReturn, SFCID, prefix, Proc.Time, fromSFID, R_ID->, toSFID@R/N+ID, Hop, " +
+                    "ComTime, DataSize, @Host, @VM, @vCPU, BW, #ofSharedConnection, TimeStamp");
 
             //設定ファイルを取得
             String fileName = args[0];

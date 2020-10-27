@@ -58,8 +58,10 @@ public class AutoRouting extends LongestMatchRouting {
     @Override
     /**
      * CCNNodeにおいて，Interstパケットの転送先を決める
+     * 要実装．
      * @param rMap: 検索対象のルータ集合
      * @param packet: これから送信するInterestパケット．この中に，SFCが入っている．
+     *
      *
      */
     public CCNRouter selectRouter(HashMap<Long, CCNRouter> rMap, InterestPacket packet) {
@@ -204,6 +206,7 @@ public class AutoRouting extends LongestMatchRouting {
      * 特定基準を満たすものがFIBにあれば，転送し，見つからなければ自分で実行する．
      * ちなみに，履歴リストにて，過去に自分に転送されていないことを保証する必要あり．
      * pがやってきた時点で，自分が含まれていないことを保証する．
+     * 要実装．
      * @param p
      * @param r
      * @return
