@@ -11,6 +11,8 @@ public class CCNLog {
 
         public static CCNLog own;
 
+        public static boolean isSFCMode;
+
         public static CCNLog getIns(){
                 if(CCNLog.own == null){
                         CCNLog.own = new CCNLog();
@@ -22,17 +24,35 @@ public class CCNLog {
                  CCNLog.logger = LogManager.getLogger();
         }
 
+        public static boolean isIsSFCMode() {
+                return isSFCMode;
+        }
+
+        public static void setIsSFCMode(boolean isSFCMode) {
+                CCNLog.isSFCMode = isSFCMode;
+        }
+
         /**
          * ログ出力する．
          * @param m
          */
         public void log(String m){
+
+                if(CCNLog.isIsSFCMode()){
+                        return;
+                }else{
+                        logger.info(m);
+
+                }
+                /*
                 if(CCNMgr.getIns().isSFCMode()){
 
                 }else{
                         logger.info(m);
 
                 }
+
+                 */
         }
 
         /**

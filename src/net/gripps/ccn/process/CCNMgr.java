@@ -332,11 +332,13 @@ public class CCNMgr implements Runnable{
                 this.allocateSFCInterest(sfc, totalNum);
                 for(int j=1;j<dupNum;j++){
                     SFC dSFC = AutoSFCMgr.getIns().replicateSFC(sfc);
-                    this.allocateSFCInterest(dSFC, totalNum);
                     totalNum++;
+                    this.allocateSFCInterest(dSFC, totalNum);
+
 
                 }
                 if(dupNum==0){
+
                     totalNum++;
                 }
             }

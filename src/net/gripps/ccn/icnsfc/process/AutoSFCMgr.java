@@ -68,6 +68,7 @@ public class AutoSFCMgr implements Serializable {
         this.SFCNum ++;
         sfc.setSfcID(this.SFCNum);
 
+
         //あとは，各タスクのIDを変更する．
         Iterator<VNF> vIte = sfc.getVnfMap().values().iterator();
         while(vIte.hasNext()){
