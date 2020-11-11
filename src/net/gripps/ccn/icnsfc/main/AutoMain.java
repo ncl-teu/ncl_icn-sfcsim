@@ -27,7 +27,7 @@ public class AutoMain {
             //欲しい情報のカテゴリ：startVNF開始,
 
             ISLog.getIns().log(",Int., 0:Interest/1:CacheHit, AplID, SFCID, prefix, fromSFID@R_ID, toSFID, <-R/N+ID, Hop, Duration, @Host, @VM, @vCPU, TimeStamp");
-            ISLog.getIns().log(",Data., 0: ProcReturn/1: CacheReturn, SFCID, prefix, Proc.Time, fromSFID, R_ID->, toSFID@R/N+ID, Hop, " +
+            ISLog.getIns().log(",Data., 0: ProcReturn/1: CacheReturn, AplID, SFCID, prefix, Proc.Time, fromSFID, R_ID->, toSFID@R/N+ID, Hop, " +
                     "ComTime, DataSize, @Host, @VM, @vCPU, BW, #ofSharedConnection, TimeStamp");
             CCNLog.setIsSFCMode(true);
             //設定ファイルを取得
