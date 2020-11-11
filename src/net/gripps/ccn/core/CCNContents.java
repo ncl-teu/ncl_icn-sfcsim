@@ -114,6 +114,7 @@ public class CCNContents implements Serializable, Cloneable{
      */
     private Boolean  isIPUsed;
 
+    private Long aplID;
 
 
 
@@ -151,6 +152,15 @@ public class CCNContents implements Serializable, Cloneable{
         this.isBC = false;
 
         this.isIPUsed = false;
+        this.aplID = -1L;
+    }
+
+    public Long getAplID() {
+        return aplID;
+    }
+
+    public void setAplID(Long aplID) {
+        this.aplID = aplID;
     }
 
     public boolean isIPUsed() {

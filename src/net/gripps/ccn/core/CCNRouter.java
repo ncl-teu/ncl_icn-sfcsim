@@ -286,6 +286,7 @@ public class CCNRouter extends AbstractNode {
                     CCNRouter r = CCNMgr.getIns().getRouterMap().get(face.getPointerID());
                     //キャッシュ
                     this.cacheContents(c, prefix);
+                    c.setAplID(sfc.getAplID());
                     r.forwardData(c);
                     //転送先が自分自身以外の場合のときだけ,pitを削除する．
                     if(r.getRouterID().longValue() == this.getRouterID().longValue()){
@@ -300,6 +301,7 @@ public class CCNRouter extends AbstractNode {
                 }else{
                     CCNNode n = CCNMgr.getIns().getNodeMap().get(face.getPointerID());
                     this.cacheContents(c, prefix);
+                    c.setAplID(sfc.getAplID());
 //Dataの転送を実行を分けてしまっているのが問題．
                     n.forwardData(c);
                     this.getPITEntry().removeFace(prefix, face);
@@ -340,7 +342,7 @@ public class CCNRouter extends AbstractNode {
             mode = 1;
         }
         long comTime = System.currentTimeMillis() - c.getHistoryList().getFirst().getStartTime();
-        ISLog.getIns().log(",Data.,"+mode+","+sfc.getSfcID() + ","+c.getPrefix()+","+duration+","+fromID+",R"+c.getHistoryList().getLast().getFromID()+"->,"+toID +"@R"+this.getRouterID() + ","+
+        ISLog.getIns().log(",Data.,"+mode+","+sfc.getAplID() + ","+sfc.getSfcID() + ","+c.getPrefix()+","+duration+","+fromID+",R"+c.getHistoryList().getLast().getFromID()+"->,"+toID +"@R"+this.getRouterID() + ","+
                 c.getHistoryList().size() +","+ comTime + ","+c.getSize()+","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+"-,"+"-,"+current);
 
 
@@ -374,6 +376,7 @@ public class CCNRouter extends AbstractNode {
                 //NULLの場合は，Contentsを転送する．
 
             }else{
+                toVNF.setAplID(sfc.getAplID());
                 targetVCPU.exec(toVNF);
                 //execしたら，消す．
                 this.inputMap.remove(key);
@@ -618,6 +621,7 @@ public class CCNRouter extends AbstractNode {
                             System.currentTimeMillis(), -1, false);
                     //キャッシュ
                     this.cacheContents(c, prefix);
+                    c.setAplID(vnf.getAplID());
                     c.getHistoryList().add(f2);
 
                     //ルータへデータを転送
@@ -637,7 +641,7 @@ public class CCNRouter extends AbstractNode {
                     //キャッシュ
                     this.cacheContents(c, prefix);
                     c.getHistoryList().add(f2);
-
+                    c.setAplID(vnf.getAplID());
                     //ルータへデータを転送
                     node.forwardData(c);
                     //System.out.println("***Data sent: VNF:"+vnf.getIDVector().get(1)+ "@"+this.getRouterID() + "->VNF:"+vnf.getIDVector().get(1)+"@NODE"+node.getNodeID());
@@ -657,6 +661,7 @@ public class CCNRouter extends AbstractNode {
             //キャッシュだけする．
             CCNContents c = new CCNContents(dsuc.getMaxDataSize(), prefix, this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
                     System.currentTimeMillis(), -1, false);
+            c.setAplID(vnf.getAplID());
             //キャッシュ
             this.cacheContents(c, prefix);
 
@@ -680,6 +685,7 @@ public class CCNRouter extends AbstractNode {
                     f2.getCustomMap().put("proctime", new Long(duration));
 
                     c.getHistoryList().add(f2);
+                    c.setAplID(vnf.getAplID());
 
                     //ルータへデータを転送
                     targetRouter.forwardData(c);
@@ -711,6 +717,7 @@ public class CCNRouter extends AbstractNode {
      */
     public void processInterest(InterestPacket p) {
         ForwardHistory h = p.getHistoryList().getLast();
+        SFC sfc = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
         //とりあえずhの到着時刻を設定
         h.setArrivalTime(System.currentTimeMillis() + CCNUtil.ccn_hop_per_delay);
         Long toID = h.getFromID();
@@ -729,8 +736,11 @@ public class CCNRouter extends AbstractNode {
         if (this.CSEntry.getCacheMap().containsKey(p.getPrefix())) {
             //System.out.println( ":CacheHit  VCPU for "+p.getPrefix()+"@"+this.getRouterID());
 
-            CCNContents c = this.CSEntry.getCacheMap().get(p.getPrefix());
+            CCNContents c_org = this.CSEntry.getCacheMap().get(p.getPrefix());
+            CCNContents c = (CCNContents)c_org.deepCopy();
+
             c.setCache(true);
+            c.setAplID(sfc.getAplID());
 
             //最新の履歴を見て，送信もとを特定する．
             if (h.getFromType() == CCNUtil.NODETYPE_ROUTER) {
@@ -782,7 +792,7 @@ public class CCNRouter extends AbstractNode {
 //キャッシュヒット
 //System.out.println(sfc_int.getAplID() + ":Candidate VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
                     CCNRouter router = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), vCPUID);
-                    ISLog.getIns().log(",Int.,1,"+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+toID +",<-" + cap + fList.getLast().getFromID() + ","+
+                    ISLog.getIns().log(",Int.,1,"+sfc_int.getAplID() + "," + sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+toID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ 0 + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
 
                 }
@@ -822,7 +832,7 @@ public class CCNRouter extends AbstractNode {
 
 //System.out.println(sfc_int.getAplID() + ":Candidate VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
                     CCNRouter router = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), vCPUID);
-                    ISLog.getIns().log(",Int.,1,"+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
+                    ISLog.getIns().log(",Int.,1,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ 0 + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
 
                 }
@@ -887,7 +897,7 @@ public class CCNRouter extends AbstractNode {
                     }else{
                         cap = "R";
                     }
-                    ISLog.getIns().log(",Int.,0,"+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
+                    ISLog.getIns().log(",Int.,0,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ duration + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
 
                     //PredVNFがstartであれば，実行する．
@@ -898,7 +908,7 @@ public class CCNRouter extends AbstractNode {
                         //vcpuのキューから取り出して実行させる．
                         VCPU startVCPU =  env.getGlobal_vcpuMap().get(predVNF.getvCPUID());
 //System.out.println(sfc_int.getAplID() + ":START  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
-
+                        predVNF.setAplID(sfc.getAplID());
                         //処理をさせる．
                         startVCPU.exec(predVNF);
 

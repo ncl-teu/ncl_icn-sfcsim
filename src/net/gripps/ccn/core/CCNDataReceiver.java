@@ -129,7 +129,7 @@ public class CCNDataReceiver implements Runnable{
                                     if(c.getHistoryList().getFirst().getCustomMap().containsKey("proctime")){
                                         proctime = ((Long)c.getHistoryList().getFirst().getCustomMap().get("proctime")).longValue();
                                     }
-                                    ISLog.getIns().log(",Data.,1,"+c.getPrefix() + "," +proctime + ","+jobID+","+c.getPrefix()+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
+                                    ISLog.getIns().log(",Data.,1,"+c.getPrefix() + "," +proctime + ","+c.getAplID()+","+jobID+","+c.getPrefix()+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
                                             c.getHistoryList().size() +","+ duration + ","+c.getSize()+","+ "-" + ","+ "-" + ",-"+","+realBW + ","+maxConNum+","+current);
 
 
@@ -163,7 +163,10 @@ public class CCNDataReceiver implements Runnable{
                                     if(c.getHistoryList().getFirst().getCustomMap().containsKey("proctime")){
                                         proctime = ((Long)c.getHistoryList().getFirst().getCustomMap().get("proctime")).longValue();
                                     }
-                                    ISLog.getIns().log(",Data.,0,"+jobID+","+c.getPrefix()+","+proctime+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
+                                    if(c.getAplID().longValue() == -1){
+                                        System.out.println();
+                                    }
+                                    ISLog.getIns().log(",Data.,0,"+c.getAplID()+","+jobID+","+c.getPrefix()+","+proctime+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
                                             c.getHistoryList().size() +","+ duration +","+ c.getSize()+","+ "-" + ","+ "-" + ",-"+","+realBW + ","+maxConNum+","+current);
 
 
