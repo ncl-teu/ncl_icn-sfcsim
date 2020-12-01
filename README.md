@@ -13,6 +13,8 @@
 ~~~
 2020/12/02 01:46:52.592  ,Int., 0:Interest/1:CacheHit, AplID, SFCID, prefix, fromSFID@R_ID, toSFID, <-R/N+ID, Hop, Duration, @Host, @VM, @vCPU, TimeStamp
 2020/12/02 01:46:52.592  ,Data., 0: ProcReturn/1: CacheReturn, AplID, SFCID, prefix, Proc.Time, fromSFID, R_ID->, toSFID@R/N+ID, Hop, ComTime, DataSize, @Host, @VM, @vCPU, BW, #ofSharedConnection, TimeStamp
+2020/12/02 01:47:00.537  ,Int.,0,0,1,/1/2/5/,2@R68,5,<-R68,1,3699,1^5,1^5^0,1^5^0^2^0,1606841220537
+2020/12/02 01:47:00.537  ,Data.,0,0,1,/1/1/4/,2912,1,R68->,4@R68,1,84,7330,1^5,1^5^0,1^5^0^2^1,-,-,1606841220537
 ~~~
  - That is, there are two types, i.e., Int (Interest sending) and Data (Data sending). 
 - is/YYYY-MM-DD-HH-mm-ss.csv format: 
