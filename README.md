@@ -10,7 +10,7 @@
 - Then every SF (Service Function) is assigned to a vCPU ID and the interest packet for the END SF is sent to the node in which the vCPU is allocated to the END SF. 
 - As for executing the simulator, type `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
 ## Autonomous ICN Mode
-- As for executing the simulator, type `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
+- As for executing the simulator, type `./automain.sh` for Linux, or double click `automain.bat` for windows. 
 # About log format. 
 - There are two types of log file, i.e., `is/islog.csv` and `is/YYYY-MM-DD-HH-mm-ss.csv`.
 - is/islog.csv format: 
