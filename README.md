@@ -4,9 +4,9 @@
 - Resultant execution information is written to a log file, and you can analyze the behaviors of the process. 
 
 ## Master-Worker ICN Mode
-# How to build
+# How to build/Run
 - If you have already installed `ant` type `ant build` at the $PROJECT_HOME. 
-- Then `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
+- As for executing the simulator, type `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
 # About log format. 
 - There are two types of log file, i.e., `is/islog.csv` and `is/YYYY-MM-DD-HH-mm-ss.csv`.
 - is/islog.csv format: 
