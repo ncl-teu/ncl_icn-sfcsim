@@ -18,6 +18,7 @@ import net.gripps.ccn.icnsfc.routing.AutoRouting;
 import net.gripps.ccn.process.CCNMgr;
 import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.core.VCPU;
+import net.gripps.cloud.core.VM;
 import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
@@ -378,6 +379,13 @@ public class CCNRouter extends AbstractNode {
             }else{
                 toVNF.setAplID(sfc.getAplID());
                 targetVCPU.exec(toVNF);
+                AutoEnvironment env = AutoSFCMgr.getIns().getEnv();
+                VM vm = env.getGlobal_vmMap().get(targetVCPU.getVMID());
+                //SFインスタンスの保存
+                AutoSFCMgr.getIns().saveUpdatedSFInsNum(sfc, toVNF,vm );
+                AutoSFCMgr.getIns().saveUpdatedVCPU(sfc, targetVCPU);
+                AutoSFCMgr.getIns().saveUpdatedVM(sfc, vm);
+
                 //execしたら，消す．
                 this.inputMap.remove(key);
                 //return targetVCPU.getPrefix();
@@ -718,6 +726,8 @@ public class CCNRouter extends AbstractNode {
     public void processInterest(InterestPacket p) {
         ForwardHistory h = p.getHistoryList().getLast();
         SFC sfc = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
+        AutoSFCMgr.getIns().saveStartTime(p, sfc);
+
         //とりあえずhの到着時刻を設定
         h.setArrivalTime(System.currentTimeMillis() + CCNUtil.ccn_hop_per_delay);
         Long toID = h.getFromID();
@@ -740,7 +750,10 @@ public class CCNRouter extends AbstractNode {
             CCNContents c = (CCNContents)c_org.deepCopy();
 
             c.setCache(true);
-            c.setAplID(sfc.getAplID());
+            if(CCNMgr.own.isSFCMode()){
+                c.setAplID(sfc.getAplID());
+
+            }
 
             //最新の履歴を見て，送信もとを特定する．
             if (h.getFromType() == CCNUtil.NODETYPE_ROUTER) {
@@ -794,7 +807,8 @@ public class CCNRouter extends AbstractNode {
                     CCNRouter router = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), vCPUID);
                     ISLog.getIns().log(",Int.,1,"+sfc_int.getAplID() + "," + sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+toID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ 0 + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
-
+                    //保存
+                    AutoSFCMgr.getIns().saveUpdatedCacheHitNum(sfc_int, 1);
                 }
 
 
@@ -834,6 +848,7 @@ public class CCNRouter extends AbstractNode {
                     CCNRouter router = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), vCPUID);
                     ISLog.getIns().log(",Int.,1,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ 0 + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
+                    AutoSFCMgr.getIns().saveUpdatedCacheHitNum(sfc_int, 1);
 
                 }
 
@@ -911,6 +926,11 @@ public class CCNRouter extends AbstractNode {
                         predVNF.setAplID(sfc.getAplID());
                         //処理をさせる．
                         startVCPU.exec(predVNF);
+                        VM vm = env.getGlobal_vmMap().get(startVCPU.getVMID());
+                        //SFインスタンスの保存
+                        AutoSFCMgr.getIns().saveUpdatedSFInsNum(sfc_int, predVNF,vm );
+                        AutoSFCMgr.getIns().saveUpdatedVCPU(sfc_int, startVCPU);
+                        AutoSFCMgr.getIns().saveUpdatedVM(sfc_int, vm);
 
                     }else{
                         //そして，predVNFのVNFへInterestパケットを投げる．

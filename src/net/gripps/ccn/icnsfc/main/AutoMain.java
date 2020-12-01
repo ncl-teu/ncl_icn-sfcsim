@@ -4,8 +4,10 @@ import net.gripps.ccn.Logger.CCNLog;
 import net.gripps.ccn.core.CCNRouter;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
+import net.gripps.ccn.icnsfc.core.AutoInfo;
 import net.gripps.ccn.icnsfc.logger.ISLog;
 import net.gripps.ccn.CCNUtil;
+import net.gripps.ccn.icnsfc.logger.StatisticalMgr;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.process.CCNMgr;
 import net.gripps.cloud.CloudUtil;
@@ -43,7 +45,11 @@ public class AutoMain {
                 //まずはクラウド側の初期設定
             AutoEnvironment env = new AutoEnvironment();
             AutoSFCMgr.getIns().setEnv(env);
+            StatisticalMgr sMgr = new StatisticalMgr();
+            sMgr.initialize();
+
             CCNMgr.getIns().process();
+
 
             /*
             CCNMgr.getIns().process();

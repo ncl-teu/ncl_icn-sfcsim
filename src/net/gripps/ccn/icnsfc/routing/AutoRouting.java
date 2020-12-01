@@ -21,6 +21,7 @@ import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
+import net.gripps.clustering.tool.Calc;
 import net.named_data.jndn.Name;
 import org.ncl.workflow.ccn.core.NclwNFDMgr;
 
@@ -214,6 +215,7 @@ public class AutoRouting extends LongestMatchRouting {
     @Override
     public String findNextRouter(InterestPacket p, CCNRouter r) {
 
+
        // String ownIP = ResourceMgr.getIns().getOwnIPAddr();
         //InterestからのSFC
         String prefix = p.getPrefix();
@@ -310,12 +312,27 @@ public class AutoRouting extends LongestMatchRouting {
         LinkedList<Face> fList = this.findLongestMatch(r, prefix);
         Iterator<Face> fnIte = fList.iterator();
         Long retID = r.getRouterID();
+        long imageSize = (long)predSF.getImageSize();
+
         //Fibのface単位に対するループ
         while(fnIte.hasNext()){
             Face face = fnIte.next();
             if(face.getType() == CCNUtil.NODETYPE_ROUTER){
                 //ルータを取得する．
                 CCNRouter vm = CCNMgr.getIns().getRouterMap().get(face.getPointerID());
+
+                ComputeHost host = env.getGlobal_hostMap().get(vm.getHostID());
+                if(host == null){
+                    continue;
+                }
+                //double dlTime = Calc.getRoundedValue((double)((double)imageSize/(double)host.getBw()));
+                //同一タイプのSFが割り当てられているかどうかによってDL時間が変わる．
+                double dlTime = AutoSFCMgr.getIns().calcImageDLTime(predSF, vm);
+                if(dlTime == -1d){
+                    continue;
+                }
+
+
                 //VMのvCPUに対するループ
                 Iterator<VCPU> vcIte = vm.getvCPUMap().values().iterator();
                 //自分以外に対するループ
@@ -323,12 +340,13 @@ public class AutoRouting extends LongestMatchRouting {
                     while(vcIte.hasNext()){
                         VCPU vcpu = vcIte.next();
                         //当該vcpuでのblevelWSTを計算する．
+                        double comTime = -1;
 
                         double tmpBlevelWST = Long.MAX_VALUE;
                         if(AutoSFCMgr.getIns().getSucVNFID(prefix) == -1){
-                            tmpBlevelWST = this.calcExecTime(predSF.getWorkLoad(), vcpu);
+                            tmpBlevelWST = dlTime + this.calcExecTime(predSF.getWorkLoad(), vcpu);
                         }else{
-                            tmpBlevelWST = this.calcBlevelWST(predSF, vcpu, sfc);
+                            tmpBlevelWST = dlTime + this.calcBlevelWST(predSF, vcpu, sfc);
 
                         }
                         if(tmpBlevelWST < localMinWST){
@@ -340,12 +358,14 @@ public class AutoRouting extends LongestMatchRouting {
                 }
 
             }
-            }
+        }
 
 
         return localVCPU.getPrefix();
 
     }
+
+
 
     public LinkedList<Face> findLongestMatch(CCNRouter router, String prefix){
         //LongestMatchによって指定のprefixに最も近いprefixを選択する．

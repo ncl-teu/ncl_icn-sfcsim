@@ -4,6 +4,7 @@ import net.gripps.ccn.CCNUtil;
 import net.gripps.ccn.Logger.CCNLog;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
+import net.gripps.ccn.icnsfc.core.AutoInfo;
 import net.gripps.ccn.icnsfc.logger.ISLog;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.icnsfc.routing.AutoRouting;
@@ -13,6 +14,7 @@ import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 import org.ncl.workflow.util.NCLWUtil;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -131,7 +133,7 @@ public class CCNDataReceiver implements Runnable{
                                     }
                                     ISLog.getIns().log(",Data.,1,"+c.getPrefix() + "," +proctime + ","+c.getAplID()+","+jobID+","+c.getPrefix()+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
                                             c.getHistoryList().size() +","+ duration + ","+c.getSize()+","+ "-" + ","+ "-" + ",-"+","+realBW + ","+maxConNum+","+current);
-
+                                    AutoSFCMgr.getIns().saveFinishTime(c.getAplID(), jobID);
 
                                 }
                             }else{
@@ -168,6 +170,8 @@ public class CCNDataReceiver implements Runnable{
                                     }
                                     ISLog.getIns().log(",Data.,0,"+c.getAplID()+","+jobID+","+c.getPrefix()+","+proctime+","+fromID+",R"+last.getFromID()+"->,"+toID +"@N" +last.getToID() + ","+
                                             c.getHistoryList().size() +","+ duration +","+ c.getSize()+","+ "-" + ","+ "-" + ",-"+","+realBW + ","+maxConNum+","+current);
+                                    AutoSFCMgr.getIns().saveFinishTime(c.getAplID(), jobID);
+
 
 
                                 }

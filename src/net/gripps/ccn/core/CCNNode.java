@@ -2,7 +2,12 @@ package net.gripps.ccn.core;
 
 import net.gripps.ccn.CCNUtil;
 import net.gripps.ccn.Logger.CCNLog;
+import net.gripps.ccn.icnsfc.AutoUtil;
+import net.gripps.ccn.icnsfc.core.AutoEnvironment;
+import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.process.CCNMgr;
+import net.gripps.cloud.core.ComputeHost;
+import net.gripps.cloud.nfv.sfc.SFC;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -296,15 +301,37 @@ public class CCNNode extends AbstractNode {
             CCNRouter r = null;
             InterestPacket packet =  this.start_interestQueue.poll();
             if(CCNMgr.getIns().isSFCMode()){
-                r = this.usedRouting.selectRouter(this.getRouterMap(), packet);
-                Long destID = r.getRouterID();
+                if(CCNMgr.getIns().isMasterWorker()){
+                    //Master-workerの場合は，特定のmasterに処理を移譲する．
+                    AutoEnvironment env = AutoSFCMgr.getIns().getEnv();
+                    ComputeHost master = env.getMasterNode();
+                    //masterのキューへ要求を入れる．
+                    SFC sfc = master.scheduleSFC(packet);
+                    packet.getAppParams().put(AutoUtil.SFC_NAME, sfc);
+                    r = this.usedRouting.selectRouter(this.getRouterMap(), packet);
+                    Long destID = r.getRouterID();
 
-                InterestPacket p  = genInterestPacket(destID, packet);
+                    InterestPacket p  = genInterestPacket(destID, packet);
 
-                long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
+                    long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
 
-                p.setMinBW(minBW);
-                r.sendInterest(p);
+                    p.setMinBW(minBW);
+                    long startTime = System.currentTimeMillis();
+                    r.sendInterest(p);
+
+                }else{
+                    r = this.usedRouting.selectRouter(this.getRouterMap(), packet);
+                    Long destID = r.getRouterID();
+
+                    InterestPacket p  = genInterestPacket(destID, packet);
+
+                    long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
+
+                    p.setMinBW(minBW);
+                    long startTime = System.currentTimeMillis();
+                    r.sendInterest(p);
+                }
+
 
             }else{
                 r = this.usedRouting.selectRouter(this.routerMap, packet);

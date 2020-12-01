@@ -34,6 +34,10 @@ public class AutoUtil  implements Serializable {
 
     public static long sfc_vnf_num_max;
 
+    public static int ccn_sfc_mode;
+
+    public static int sched_altorithm;
+
 
     /**
      * 設定情報プロパティ
@@ -56,10 +60,12 @@ public class AutoUtil  implements Serializable {
         try{
             AutoUtil.prop = new Properties();
             AutoUtil.prop.load(new FileInputStream(fileName));
-            AutoUtil.ccn_sfc_totalnum = Integer.valueOf(CCNUtil.prop.getProperty("ccn_sfc_totalnum"));
-            AutoUtil.ccn_sfc_typenum = Integer.valueOf(CCNUtil.prop.getProperty("ccn_sfc_typenum"));
-            AutoUtil.sfc_vnf_num_min = Long.valueOf(CCNUtil.prop.getProperty("sfc_vnf_num_min"));
-            AutoUtil.sfc_vnf_num_max= Long.valueOf(CCNUtil.prop.getProperty("sfc_vnf_num_max"));
+            AutoUtil.ccn_sfc_totalnum = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_totalnum"));
+            AutoUtil.ccn_sfc_typenum = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_typenum"));
+            AutoUtil.sfc_vnf_num_min = Long.valueOf(AutoUtil.prop.getProperty("sfc_vnf_num_min"));
+            AutoUtil.sfc_vnf_num_max= Long.valueOf(AutoUtil.prop.getProperty("sfc_vnf_num_max"));
+            AutoUtil.ccn_sfc_mode = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_mode"));
+            AutoUtil.sched_altorithm = Integer.valueOf(AutoUtil.prop.getProperty("sched_algorithm"));
 
 
 

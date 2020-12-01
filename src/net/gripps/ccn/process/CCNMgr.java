@@ -12,6 +12,8 @@ import net.gripps.ccn.fibrouting.LongestMatchRouting;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.icnsfc.routing.AutoRouting;
+import net.gripps.ccn.icnsfc.routing.MWRouting;
+import net.gripps.cloud.nfv.NFVUtil;
 import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 
@@ -60,6 +62,8 @@ public class CCNMgr implements Runnable{
 
     protected boolean isSFCMode;
 
+    protected boolean isMasterWorker;
+
 
 
     //protected LinkedBlockingQueue<InterestPacket> reqQueue;
@@ -101,6 +105,8 @@ public class CCNMgr implements Runnable{
         this.routings[1] = new ChordOnBARouting(this.nodeMap, this.routerMap);
         this.routings[2] = new LongestMatchRouting(this.nodeMap, this.routerMap);
         this.routings[3] = new AutoRouting(this.nodeMap, this.routerMap);
+        this.routings[4] = new MWRouting(this.nodeMap, this.routerMap);
+
         /*************ここまで*************************/
         this.usedRouting = this.routings[CCNUtil.ccn_routing_no];
 
@@ -114,12 +120,14 @@ public class CCNMgr implements Runnable{
         //************:ここまで*************************/
 
         this.isSFCMode = false;
+        this.isMasterWorker = false;
         this.initialize();
 //数を増やす余地あり．
 
 
         this.buildInterestPackets();
         this.buildFIB();
+
 
 
     }
@@ -330,6 +338,28 @@ public class CCNMgr implements Runnable{
             while(totalNum < AutoUtil.ccn_sfc_totalnum){
                 SFC sfc = AutoSFCMgr.getIns().createNewSFC();
                 this.allocateSFCInterest(sfc, totalNum);
+
+
+                Iterator<VNF> vIte = sfc.getVnfMap().values().iterator();
+                while(vIte.hasNext()){
+                    VNF vnf = vIte.next();
+                    StringBuffer kBuf = new StringBuffer(String.valueOf(sfc.getSfcID()));
+                    kBuf.append("^");
+                    kBuf.append(vnf.getIDVector().get(1));
+                    String vID = kBuf.toString();
+                    long size = -1;
+
+                    if(AutoSFCMgr.getIns().getImgMap().containsKey(vID)){
+                        size = AutoSFCMgr.getIns().getImgMap().get(vID);
+                        vnf.setImageSize(size);
+                    }else{
+                        size = NFVUtil.genLong(NFVUtil.vnf_image_size_min, NFVUtil.vnf_image_size_max);
+                        AutoSFCMgr.getIns().getImgMap().put(vID, size);
+                        vnf.setImageSize(size);
+
+                    }
+                }
+
                 for(int j=1;j<dupNum;j++){
                     SFC dSFC = AutoSFCMgr.getIns().replicateSFC(sfc);
                     totalNum++;
@@ -584,5 +614,13 @@ public class CCNMgr implements Runnable{
 
     public void setSFCMode(boolean SFCMode) {
         isSFCMode = SFCMode;
+    }
+
+    public boolean isMasterWorker() {
+        return isMasterWorker;
+    }
+
+    public void setMasterWorker(boolean masterWorker) {
+        isMasterWorker = masterWorker;
     }
 }

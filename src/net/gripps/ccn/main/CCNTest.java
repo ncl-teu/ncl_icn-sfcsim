@@ -14,6 +14,7 @@ public class CCNTest {
         CCNLog s = new CCNLog();
         s.runSample();
 */
+        CCNLog.setIsSFCMode(false);
         CCNLog.getIns().log(",type(1:InterestARRIVED->/2:Org_DataGET<-/13:CacheARRIVED->/3:CacheGET<-/4:CacheARRIVEDByBC->/5:RouterJOIN/6:RouterLEAVE), " +
                 "prefix,DataSize(MB), StartTime,FinishTime,duration(ms),Interest_senderID,Data(Cache)holdingNodeID, Hop#,# of SharedConnections," +
                 "ContentsFound/Not,ByBC?,Memo");

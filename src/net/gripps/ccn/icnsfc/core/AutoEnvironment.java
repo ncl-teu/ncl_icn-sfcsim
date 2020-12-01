@@ -63,6 +63,9 @@ public class AutoEnvironment extends NFVEnvironment {
                     HashMap<Long, Core> coreMap = new HashMap<Long, Core>();
 
                     //コア数分だけのループ
+                    //vcpu数: coreNum * host_thread_num_foreeachcore,
+                    //VMあたりに持つべきvcpu数: vcpu数/vmnum_host
+
                     for(int l=0;l < coreNum;l++){
                         double rate = Math.min(1.0, CloudUtil.genDouble(CloudUtil.core_mips_rate_min, CloudUtil.core_mips_rate_max));
                         HashMap<Long, VCPU> vcpuMap = new HashMap<Long, VCPU>();
@@ -136,6 +139,7 @@ public class AutoEnvironment extends NFVEnvironment {
                 //次に，VM数分だけのループ
                 int vm_num = CloudUtil.genInt(CloudUtil.vm_num_foreachdc_min, CloudUtil.vm_num_foreachdc_max);
                 //HashMap<String, VM> vmMap = new HashMap<String, VM>();
+                int realVMNum = (int)Math.max(vm_num, vmnum_host);
                 for(int v=0;v<vmnum_host;v++){
                     if(!isMoreVM){
                         break;
@@ -152,8 +156,9 @@ public class AutoEnvironment extends NFVEnvironment {
                     //     VM vm  = new VM(vmPrefix, hostPrefix,  new HashMap<String, VCPU>(), ramSize, vmPrefix);
                     HashMap<String, VCPU> vMap = new HashMap<String, VCPU>();
 
-                    int realLen = Math.min(vcpu_num, vQueue.size());
+                   // int realLen = Math.min(vcpu_num, vQueue.size());
                     //int realLen = vcpu_num;
+                    int realLen = (int)Math.ceil(vQueue.size() / vmnum_host);
 
                     for(int q=0;q<realLen;q++){
                         if(vQueue.isEmpty()){
