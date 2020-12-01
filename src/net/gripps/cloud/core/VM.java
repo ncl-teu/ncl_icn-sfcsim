@@ -51,6 +51,8 @@ public class VM /*extends Machine*/ implements Serializable {
      */
     protected HashMap<Long, SFC> sfcMap;
 
+    protected String name;
+
 
 
     public VM(){
@@ -68,10 +70,17 @@ public class VM /*extends Machine*/ implements Serializable {
         this.orgVMID = orgVMID;
         this.ipAddr = null;
         this.sfcMap = new HashMap<Long, SFC>();
+        this.name = null;
 
     }
 
+    public String getName() {
+        return name;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public HashMap<Long, SFC> getSfcMap() {
         return sfcMap;

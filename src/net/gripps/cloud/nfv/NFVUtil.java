@@ -4,6 +4,7 @@ import net.gripps.cloud.CloudUtil;
 import org.apache.commons.math.random.RandomDataImpl;
 
 import java.io.FileInputStream;
+import java.util.HashMap;
 import java.util.Properties;
 
 /**
@@ -82,6 +83,7 @@ public class NFVUtil extends CloudUtil {
 
 
 
+
     // public static double nfv_fairness_weight_rt;
 
 
@@ -149,6 +151,7 @@ public class NFVUtil extends CloudUtil {
 
             NFVUtil.vnf_image_size_min = Long.valueOf(prop.getProperty("vnf_image_size_min")).longValue();
             NFVUtil.vnf_image_size_max = Long.valueOf(prop.getProperty("vnf_image_size_max")).longValue();
+
 
 
 

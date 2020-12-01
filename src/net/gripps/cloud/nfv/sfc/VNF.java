@@ -183,6 +183,8 @@ public class VNF  implements Serializable{
 
     protected boolean isInterestSent;
 
+    protected Long aplID;
+
 
     public LinkedList<VDependence> getVDpredList() {
         return VDpredList;
@@ -246,7 +248,16 @@ public class VNF  implements Serializable{
         this.hLevel = -1;
         this.aveOCT = -1d;
         this.imageSize = 0;
+        this.aplID = -1L;
 
+    }
+
+    public Long getAplID() {
+        return aplID;
+    }
+
+    public void setAplID(Long aplID) {
+        this.aplID = aplID;
     }
 
     public Long getDominantPredID() {

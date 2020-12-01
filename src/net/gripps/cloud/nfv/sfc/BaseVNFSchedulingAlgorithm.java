@@ -1,6 +1,5 @@
 package net.gripps.cloud.nfv.sfc;
 
-import com.sun.javafx.embed.HostDragStartListener;
 import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.core.*;
 import net.gripps.cloud.nfv.NFVEnvironment;
@@ -1089,9 +1088,10 @@ public class BaseVNFSchedulingAlgorithm {
         long dcBW = NFVUtil.MAXValue;
         Cloud fromCloud = env.getDcMap().get(fromDCID);
         Cloud toCloud = env.getDcMap().get(toDCID);
-
+        boolean isSameDC = false;
         //同一クラウド内であれば，DC間の通信は考慮しなくて良い．
         if (fromDCID.longValue() == toDCID.longValue()) {
+            isSameDC = true;
         } else {
             //DCが異なれば，DC間の通信も考慮スべき．
             dcBW = Math.min(fromCloud.getBw(), toCloud.getBw());
@@ -1104,12 +1104,18 @@ public class BaseVNFSchedulingAlgorithm {
         ComputeHost fromHost = fromCloud.getComputeHostMap().get(fromHostID);
         ComputeHost toHost = toCloud.getComputeHostMap().get(toHostID);
         long hostBW = NFVUtil.MAXValue;
-        if (fromHost.getDcID() == toHost.getMachineID()) {
-            //同一ホストなら，0を返す．
-            return 0;
-        } else {
+        if(isSameDC){
+            if (fromHost.getMachineID() == toHost.getMachineID()) {
+                //同一ホストなら，0を返す．
+                return 0;
+            } else {
+                hostBW = Math.min(fromHost.getBw(), toHost.getBw());
+            }
+        }else{
             hostBW = Math.min(fromHost.getBw(), toHost.getBw());
+
         }
+
 
         long realBW = Math.min(dcBW, hostBW);
 

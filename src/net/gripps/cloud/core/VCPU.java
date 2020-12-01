@@ -2,17 +2,14 @@ package net.gripps.cloud.core;
 
 import net.gripps.ccn.core.CCNRouter;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
-import net.gripps.ccn.process.CCNMgr;
 import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.mapreduce.core.IMapReduce;
 import net.gripps.cloud.mapreduce.datamodel.*;
 import net.gripps.cloud.nfv.sfc.StartTimeComparator;
 import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
-import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.environment.CPU;
 import org.ncl.workflow.util.NCLWUtil;
-import sun.awt.image.ImageWatched;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -153,9 +150,14 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
                     }else{
                         //何かVNFに入っている場合
                         VNF vnf = this.execQueue.get(this.genKey(this.currentVNF));
+
                         double time = AutoSFCMgr.getIns().calcExecTime(vnf.getWorkLoad(), this);
+                        //DL timeを計測．
+                        double dlTime = AutoSFCMgr.getIns().calcImageDLTime(vnf, this);
+                        time += dlTime;
+
                         long start = System.currentTimeMillis();
-                        Thread.sleep((long)time*1000);
+                        Thread.sleep((long)(time*1000));
                         long end = System.currentTimeMillis();
                         long duration = end - start;
                         this.execQueue.remove(this.genKey(this.currentVNF));
@@ -164,8 +166,11 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
 //System.out.println("Exec END@SFC:"+vnf.getIDVector().get(0) + "VNF:"+vnf.getIDVector().get((1)) + " with Time:"+time + "@Router"+router.getRouterID());
 
                         //終わったら，ルータへデータ返送の手続きを行う．
+                        //割り当て済みだったSFを削除する．
+                        this.vnfQueue.remove(vnf);
 
-                        router.sendResultantData(vnf, (long)time*1000);
+
+                        router.sendResultantData(vnf, (long)(time*1000));
 
 
                     }
@@ -181,6 +186,7 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
         }
 
     }
+
 
     public VCPU(Long id, long speed, Vector<Long> assignedTaskList, Vector<Long> scheduledTaskList,
                 String prefix, String cPrefix, HashMap<String, Long> prefixMap, String  vmID, long mips, long usedMips) {
