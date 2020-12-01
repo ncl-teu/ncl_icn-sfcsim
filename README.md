@@ -3,9 +3,13 @@
 - This simulator supports several SF(Service Function) scheduling algorithms, and you can add a new algorithm in it. 
 - Resultant execution information is written to a log file, and you can analyze the behaviors of the process. 
 
-## Master-Worker ICN Mode
-# How to build/Run
+# How to build/run
 - If you have already installed `ant` type `ant build` at the $PROJECT_HOME. 
+## Master-Worker ICN Mode
+- A CCNNode generates SFC and send the request to the master node. Then the master node schedules according to `master.properties`. 
+- Then every SF (Service Function) is assigned to a vCPU ID and the interest packet for the END SF is sent to the node in which the vCPU is allocated to the END SF. 
+- As for executing the simulator, type `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
+## Autonomous ICN Mode
 - As for executing the simulator, type `./mastermain.sh` for Linux, or double click `mastermain.bat` for windows. 
 # About log format. 
 - There are two types of log file, i.e., `is/islog.csv` and `is/YYYY-MM-DD-HH-mm-ss.csv`.
