@@ -179,7 +179,10 @@ public class AutoSFCMgr implements Serializable {
 
         Iterator<VCPU> vIte = vm.getvCPUMap().values().iterator();
         boolean ret = false;
-        while(vIte.hasNext()){
+        if(vm.getDlSet().contains((long)vnf.getType())){
+            ret = true;
+
+        /*while(vIte.hasNext()){
             VCPU vcpu = vIte.next();
             Iterator<VNF> vnfIte = vcpu.getVnfQueue().iterator();
             while(vnfIte.hasNext()){
@@ -190,7 +193,23 @@ public class AutoSFCMgr implements Serializable {
                 }
 
             }
+
+         */
+            /*if(!vcpu.getHavingVNFSet().isEmpty()){
+                Iterator<VNF> vIte2 = vcpu.getHavingVNFSet().iterator();
+                while(vIte2.hasNext()){
+                    VNF v = vIte2.next();
+                    if(v.getType()==vnf.getType()){
+                        ret = true;
+                        break;
+                    }
+                }
+
+            }*/
+
         }
+
+
         return ret;
     }
 
@@ -238,6 +257,7 @@ public class AutoSFCMgr implements Serializable {
             return 0.0d;
         }else{
             double dlTime = Calc.getRoundedValue((double)((double)imageSize/(double)host.getBw()));
+            vm.getDlSet().add((long)vnf.getType());
             return dlTime;
         }
 
