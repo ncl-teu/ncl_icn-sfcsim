@@ -122,7 +122,9 @@ public class ComputeHost extends Machine{
 
                 sfc = p.getSfc();
                 break;
+
             default:
+
                 SF_CUVAlgorithm sf_cuv2 = new SF_CUVAlgorithm(env, sfc);
 
                 sf_cuv2.mainProcess();

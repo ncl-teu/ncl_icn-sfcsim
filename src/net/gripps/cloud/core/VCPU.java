@@ -72,11 +72,6 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
 
 
 
-
-
-
-
-
     /**
      * VNFのリスト．最初から持っている場合もあれば，あとで追加される場合もある．
      */
@@ -110,6 +105,8 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
         this.execQueue = new HashMap<String, VNF>();
 
     }
+
+
 
     public boolean isRealMode() {
         return realMode;

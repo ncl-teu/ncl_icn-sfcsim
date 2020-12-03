@@ -4,6 +4,7 @@ import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
+import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.environment.CPU;
 import net.gripps.environment.Machine;
@@ -53,10 +54,16 @@ public class VM /*extends Machine*/ implements Serializable {
 
     protected String name;
 
+    /**
+     * DLしたVNFイメージのタイプ集合
+     */
+    protected CustomIDSet dlSet;
+
 
 
     public VM(){
         this.sfcMap = new HashMap<Long, SFC>();
+        this.dlSet = new CustomIDSet();
 
     }
 
@@ -71,7 +78,16 @@ public class VM /*extends Machine*/ implements Serializable {
         this.ipAddr = null;
         this.sfcMap = new HashMap<Long, SFC>();
         this.name = null;
+        this.dlSet = new CustomIDSet();
 
+    }
+
+    public CustomIDSet getDlSet() {
+        return dlSet;
+    }
+
+    public void setDlSet(CustomIDSet dlSet) {
+        this.dlSet = dlSet;
     }
 
     public String getName() {
