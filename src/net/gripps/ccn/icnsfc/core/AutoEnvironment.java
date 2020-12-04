@@ -30,6 +30,7 @@ public class AutoEnvironment extends NFVEnvironment {
         //1dcあたりのvm数
         long vmnum_dc = (long)Math.ceil(CCNUtil.ccn_router_num/NFVUtil.num_dc);
 
+
         //DC数だけのループ
         for(int i = 0; i< CloudUtil.num_dc; i++){
 
@@ -190,14 +191,25 @@ public class AutoEnvironment extends NFVEnvironment {
                     //VMを，ホストへ追加する．
                     host.getVmMap().put(vmPrefix, r);
                     this.global_vmMap.put(vmPrefix, r);
+                    if(vm_totalNum >= CCNUtil.ccn_node_routernum){
+                        break;
+                    }
 
                 }
+                if(vm_totalNum >= CCNUtil.ccn_node_routernum){
+                    break;
+                }
+
 
 
             }
 
             dc.setComputeHostMap(hostMap);
             retMap.put(new Long(i), dc);
+            if(vm_totalNum >= CCNUtil.ccn_node_routernum){
+                break;
+            }
+
         }
 
 
