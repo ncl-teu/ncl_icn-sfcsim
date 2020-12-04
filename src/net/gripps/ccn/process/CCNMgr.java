@@ -121,14 +121,16 @@ public class CCNMgr implements Runnable{
 
         this.isSFCMode = false;
         this.isMasterWorker = false;
-        this.initialize();
+        if(AutoSFCMgr.getIns().isSFC()){
+
+        }else{
+            this.initialize();
 //数を増やす余地あり．
 
 
-        this.buildInterestPackets();
-        this.buildFIB();
-
-
+            this.buildInterestPackets();
+            this.buildFIB();
+        }
 
     }
 
@@ -176,6 +178,32 @@ public class CCNMgr implements Runnable{
             e.printStackTrace();
         }
     }
+    public long  calcRouterID(int i){
+        long id = this.usedRouting.calcID(i);
+        return id;
+
+    }
+
+    public void initForSFC(){
+        //ノードの配備
+        for(int j=0;j<CCNUtil.ccn_node_num;j++){
+            //今度はノード作成
+            CCNNode node = new CCNNode(new Long(j));
+            this.nodeMap.put(node.getNodeID(), node);
+        }
+
+        //次は，各ルータのfaceを設定する．
+        this.buildRouterFaces();
+        //ノード<-->ルータの紐づけをする．
+        this.buildNodeFaces();
+
+        this.buildInterestPackets();
+        this.buildFIB();
+
+
+    }
+
+
 
     /**
      * ルーティングにて行うこと：
@@ -255,6 +283,14 @@ public class CCNMgr implements Runnable{
 
 
 
+    }
+
+    public BaseRouting getUsedRouting() {
+        return usedRouting;
+    }
+
+    public void setUsedRouting(BaseRouting usedRouting) {
+        this.usedRouting = usedRouting;
     }
 
     /**

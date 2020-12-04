@@ -64,6 +64,8 @@ public class AutoSFCMgr implements Serializable {
 
     protected long globalCnt;
 
+    protected boolean isSFC;
+
 
     public static AutoSFCMgr getIns(){
         if(AutoSFCMgr.own == null){
@@ -87,8 +89,17 @@ public class AutoSFCMgr implements Serializable {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
         this.currentTime = cl.getTime();
         this.globalCnt = 0;
+        this.isSFC = false;
 
 
+    }
+
+    public boolean isSFC() {
+        return isSFC;
+    }
+
+    public void setSFC(boolean SFC) {
+        isSFC = SFC;
     }
 
     public int getFinishCount() {

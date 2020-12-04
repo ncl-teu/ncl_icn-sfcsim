@@ -148,6 +148,8 @@ public class AutoEnvironment extends NFVEnvironment {
                     if(vm_totalNum > CCNUtil.ccn_router_num){
                         break;
                     }
+
+
                     //IDを生成．
                     String vmPrefix = i + CloudUtil.DELIMITER + j + CloudUtil.DELIMITER + v;
                     //String hostPrefix =  i + CloudUtil.DELIMITER + j;
@@ -175,9 +177,9 @@ public class AutoEnvironment extends NFVEnvironment {
                     if(vMap.isEmpty()){
                         break;
                     }
-                 //   VM vm  = new VM(vmPrefix, hostPrefix,  vMap, ramSize, vmPrefix);
-                    CCNRouter  r = (CCNMgr.getIns().getRouterMap().get(vm_totalNum));
 
+                    long id = CCNMgr.getIns().getUsedRouting().calcID(vm_totalNum);
+                    CCNRouter r = new CCNRouter(new Long(id));
                     r.setType(CCNUtil.NODETYPE_ROUTER);
                     r.setVMID(vmPrefix);
                     r.setHostID(hostPrefix);
@@ -185,37 +187,42 @@ public class AutoEnvironment extends NFVEnvironment {
                     r.setRamSize(ramSize);
                     r.setOrgVMID(vmPrefix);
 
+                    CCNMgr.getIns().getRouterMap().put(r.getRouterID(), r);
+
+
+
+                 //   VM vm  = new VM(vmPrefix, hostPrefix,  vMap, ramSize, vmPrefix);
+                  /*  CCNRouter  r = (CCNMgr.getIns().getRouterMap().get(vm_totalNum));
+                    //ルータを新規生成する．
+                    if(r == null){
+                        //もしnullなら，追加する．
+                        long id = CCNMgr.getIns().getUsedRouting().calcID(vm_totalNum);
+                        CCNRouter router = new CCNRouter(new Long(id));
+                        CCNMgr.getIns().getRouterMap().put(router.getRouterID(), router);
+
+                    }else{
+
+                    }
+*/
+
                     vm_totalNum++;
 
 
                     //VMを，ホストへ追加する．
                     host.getVmMap().put(vmPrefix, r);
                     this.global_vmMap.put(vmPrefix, r);
-                    if(vm_totalNum >= CCNUtil.ccn_node_routernum){
-                        break;
-                    }
 
                 }
-                if(vm_totalNum >= CCNUtil.ccn_node_routernum){
-                    break;
-                }
-
-
 
             }
 
             dc.setComputeHostMap(hostMap);
             retMap.put(new Long(i), dc);
-            if(vm_totalNum >= CCNUtil.ccn_node_routernum){
-                break;
-            }
 
         }
-
-
-
+        CCNUtil.ccn_router_num = (int)vm_totalNum;
+        CCNMgr.getIns().initForSFC();
         //this.setDcMap(retMap);
-
 
         return retMap;
     }

@@ -29,6 +29,7 @@ public class MasterMain {
         CloudUtil.getInstance().initialize(fileName);
         CCNUtil.getIns().initialize(fileName);
         AutoUtil.getIns().initialize(fileName);
+        AutoSFCMgr.getIns().setSFC(true);
 
         //CCNMgr: ルータ, ノードのDB
         CCNMgr.getIns().setSFCMode(true);
