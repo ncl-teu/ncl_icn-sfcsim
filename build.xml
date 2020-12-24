@@ -102,13 +102,17 @@
         <classpath path="${lib}/jndn.jar" />
         <classpath path="${lib}/sqlite-jdbc-3.23.1.jar" />
         <classpath path="${lib}/protobuf-java-2.6.1.jar" />
+        
         <classpath path="${lib}/jndn-management-master-1.2.2.jar" />
-        <classpath path="${lib}/jndn-forwarder.jar" />
+        <classpath path="${lib}/jndn-forwarder-ncl.jar" />
         <classpath path="${lib}/jndn-utils.jar" />
         <classpath path="${lib}/oshi-core-4.4.2.jar" />
         <classpath path="${lib}/jna-5.5.0.jar.jar" />
         <classpath path="${lib}/jna-platform-5.5.0.jar" />
         <classpath path="${lib}/slf4j-api-1.7.30.jar" />
+        <classpath path="${lib}/ncl-sfcworkflow.jar" />
+        <classpath path="${lib}/ncl-taskschedsim.jar" />
+
 
 
 
