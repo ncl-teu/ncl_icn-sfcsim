@@ -23,6 +23,7 @@ import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
+import net.gripps.util.CopyUtil;
 import org.ncl.workflow.util.NCLWUtil;
 
 import java.util.HashMap;
@@ -133,7 +134,6 @@ public class CCNRouter extends AbstractNode {
     protected TreeSet<String> interestArrivedSet;
 
 
-
     /**
      * @param routerID
      */
@@ -177,8 +177,6 @@ public class CCNRouter extends AbstractNode {
         //データ受信プロセスを起動
         Thread t = new Thread(this.receiver);
         t.start();
-
-
     }
 
     public CCNRouter() {
@@ -206,8 +204,8 @@ public class CCNRouter extends AbstractNode {
                     //Interestパケットがこなければ，何もしない．
                 }
                 if (!this.contentsQueue.isEmpty()) {
-                    //コンテンツが来たら，処理
-                    CCNContents c = this.contentsQueue.poll();
+                        //コンテンツが来たら，処理
+                        CCNContents c = this.contentsQueue.poll();
                     if(CCNMgr.getIns().isSFCMode()){
                         this.processInputData(c);
                     }else{
@@ -225,10 +223,7 @@ public class CCNRouter extends AbstractNode {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
-
 
     public VCPU findVCPU(VNF vnf){
         Iterator<VCPU> vIte = this.vCPUMap.values().iterator();
@@ -250,7 +245,13 @@ public class CCNRouter extends AbstractNode {
             String prefix = keyIte.next();
             Face face = map.get(prefix);
             this.getPITEntry().removeFace(prefix, face);
+        }
 
+        Iterator<Face> rIte = this.face_routerMap.values().iterator();
+        while(rIte.hasNext()){
+            Face f = rIte.next();
+            //各ルータを取得
+            CCNRouter r = CCNMgr.getIns().getRouterMap().get(f.getPointerID());
         }
     }
 
@@ -428,7 +429,7 @@ public class CCNRouter extends AbstractNode {
 
             } else {
                 ForwardHistory lastH = c.getHistoryList().getLast();
-                lastH.setArrivalTime(System.currentTimeMillis() + CCNUtil.ccn_hop_per_delay);
+                lastH.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
                 //キャッシュでなければ，BCチェックをする．
 
                 //コンテンツが来た時，PITを見る．
@@ -509,6 +510,7 @@ public class CCNRouter extends AbstractNode {
 
 
                         CCNContents copyContents = (CCNContents) c.deepCopy();
+                        long currentTime = System.currentTimeMillis();
                         if (this.cs_num <= this.CSEntry.getCacheMap().size()) {
                             this.usedCaching.chachingIFCSFULL(c, this);
                         } else {
@@ -729,7 +731,7 @@ public class CCNRouter extends AbstractNode {
         AutoSFCMgr.getIns().saveStartTime(p, sfc);
 
         //とりあえずhの到着時刻を設定
-        h.setArrivalTime(System.currentTimeMillis() + CCNUtil.ccn_hop_per_delay);
+        h.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
         Long toID = h.getFromID();
         int toType = h.getFromType();
         p.setCount(p.getCount() + 1);
@@ -779,6 +781,7 @@ public class CCNRouter extends AbstractNode {
                         System.currentTimeMillis(), -1);
                 f.getCustomMap().put("proctime", new Long(0));
                 c.getHistoryList().add(f);
+
                 r.forwardData(c);
                 //this.getPITEntry().removeByKey(p.getPrefix());
                 CCNLog.getIns().log(",13," + p.getPrefix() + ",-" + "," + fList.getFirst().getStartTime() + "," + fList.getLast().getArrivalTime() + "," +
@@ -857,7 +860,7 @@ public class CCNRouter extends AbstractNode {
             //自身のprocessContents
             //this.processContents(c);
         } else {
-            //CSになければ，PITを見る．
+            //CSになければ，PITに追加する．
             boolean isNotFound = false;
             //PITへの反映
             this.addFacetoPit(p, toID, toType);
@@ -875,7 +878,7 @@ public class CCNRouter extends AbstractNode {
 
                 if(this.interestArrivedSet.contains(p.getPrefix())){
                     //System.out.println("NG:"+p.getPrefix()+"@"+this.getRouterID());
-                    return;
+                    //return;
                 }else{
                     this.interestArrivedSet.add(p.getPrefix());
                 }
@@ -914,7 +917,8 @@ public class CCNRouter extends AbstractNode {
                     }
                     ISLog.getIns().log(",Int.,0,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ duration + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
-
+                    //FIBに登録する．
+                    //this.getFIBEntry().addFace(p.getPrefix(), )
                     //PredVNFがstartであれば，実行する．
                     //ちょっとまって，すべての後続からのinterestが届いてから？
                     //他にも同一startタスクを実行するノードがあるので，ここでは同期はとれない．
