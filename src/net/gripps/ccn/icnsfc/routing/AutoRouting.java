@@ -227,6 +227,7 @@ public class AutoRouting extends LongestMatchRouting {
         }else{
             //初めてのSFCなら，登録する．
             r.getSfcMap().put(sfc_int.getSfcID(), (SFC)sfc_int.deepCopy());
+            //r.getSfcMap().put(sfc_int.getSfcID(), (SFC)sfc_int);
             sfc_own = r.getSfcMap().get(sfc_int.getSfcID());
 
         }
