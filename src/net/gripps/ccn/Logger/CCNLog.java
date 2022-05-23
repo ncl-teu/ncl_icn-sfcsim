@@ -4,7 +4,9 @@ import net.gripps.ccn.process.CCNMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class CCNLog {
+import java.util.concurrent.PriorityBlockingQueue;
+
+public class CCNLog implements Runnable{
         //getLoggerの引数はロガー名を指定する。
         //log4j2では、ロガー名の指定が省略可能になった。
         private static Logger logger;
@@ -12,6 +14,8 @@ public class CCNLog {
         public static CCNLog own;
 
         public static boolean isSFCMode;
+
+        private PriorityBlockingQueue<String> msgQueue;
 
         public static CCNLog getIns(){
                 if(CCNLog.own == null){
@@ -22,6 +26,24 @@ public class CCNLog {
 
         private  CCNLog(){
                  CCNLog.logger = LogManager.getLogger();
+                 this.msgQueue = new PriorityBlockingQueue<String>();
+                 Thread t = new Thread(this);
+                 t.start();
+        }
+
+        @Override
+        public void run() {
+                while(true){
+                        if(!this.msgQueue.isEmpty()){
+                                String msg = this.msgQueue.poll();
+                                if(CCNLog.isIsSFCMode()){
+                                        return;
+                                }else{
+                                        logger.info(msg);
+
+                                }
+                        }
+                }
         }
 
         public static boolean isIsSFCMode() {
@@ -37,13 +59,14 @@ public class CCNLog {
          * @param m
          */
         public void log(String m){
+                this.msgQueue.offer(m);
 
-                if(CCNLog.isIsSFCMode()){
+               /* if(CCNLog.isIsSFCMode()){
                         return;
                 }else{
                         logger.info(m);
 
-                }
+                }*/
                 /*
                 if(CCNMgr.getIns().isSFCMode()){
 

@@ -265,6 +265,7 @@ public class CCNMgr implements Runnable{
                 if(CCNUtil.ccn_routing_no <= 1){
                     uuid = UUID.randomUUID();
                     prefix  = uuid.toString();
+
                 }else{
                     prefix = this.usedRouting.generatePrefix();
                 }

@@ -3,13 +3,18 @@ package net.gripps.ccn.icnsfc.logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+
 /**
  * Created by Hidehiro Kanemitsu on 2020/08/27
  */
-public class ISLog {
+public class ISLog implements Runnable{
     //getLoggerの引数はロガー名を指定する。
     //log4j2では、ロガー名の指定が省略可能になった。
     private static Logger logger;
+
+    private PriorityBlockingQueue<String> msgQueue;
 
     public static ISLog own;
 
@@ -22,6 +27,9 @@ public class ISLog {
 
     private  ISLog(){
         ISLog.logger = LogManager.getLogger();
+        this.msgQueue = new PriorityBlockingQueue<String>();
+        Thread t = new Thread(this);
+        t.start();
     }
 
     /**
@@ -29,7 +37,18 @@ public class ISLog {
      * @param m
      */
     public void log(String m){
-        logger.info(m);
+        //logger.info(m);
+        this.msgQueue.offer(m);
+    }
+
+    @Override
+    public void run() {
+        while(true){
+            if(!this.msgQueue.isEmpty()){
+                String msg = this.msgQueue.poll();
+                logger.info(msg);
+            }
+        }
     }
 
     /**

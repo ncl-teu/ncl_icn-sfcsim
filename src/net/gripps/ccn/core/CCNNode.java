@@ -309,6 +309,7 @@ public class CCNNode extends AbstractNode {
                     SFC sfc = master.scheduleSFC(packet);
                     packet.getAppParams().put(AutoUtil.SFC_NAME, sfc);
                     r = this.usedRouting.selectRouter(this.getRouterMap(), packet);
+
                     Long destID = r.getRouterID();
 
                     InterestPacket p  = genInterestPacket(destID, packet);
@@ -321,6 +322,7 @@ public class CCNNode extends AbstractNode {
 
                 }else{
                     r = this.usedRouting.selectRouter(this.getRouterMap(), packet);
+
                     Long destID = r.getRouterID();
 
                     InterestPacket p  = genInterestPacket(destID, packet);

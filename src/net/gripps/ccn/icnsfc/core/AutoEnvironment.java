@@ -8,6 +8,7 @@ import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.core.*;
 import net.gripps.cloud.nfv.NFVEnvironment;
 import net.gripps.cloud.nfv.NFVUtil;
+import net.gripps.clustering.tool.Calc;
 import net.gripps.environment.CPU;
 
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class AutoEnvironment extends NFVEnvironment {
         //VM数(CCNRouter数)に関するグローバル数．
         long vm_totalNum = 0;
         //1dcあたりのvm数
-        long vmnum_dc = (long)Math.ceil(CCNUtil.ccn_router_num/NFVUtil.num_dc);
+        long vmnum_dc = (long)Math.floor(CCNUtil.ccn_router_num/NFVUtil.num_dc);
 
 
         //DC数だけのループ
@@ -44,7 +45,7 @@ public class AutoEnvironment extends NFVEnvironment {
 
             HashMap<Long, ComputeHost> hostMap = new HashMap<Long, ComputeHost>();
             //1ホストあたりのvm数
-            long vmnum_host = (long)Math.ceil(vmnum_dc/hostNum);
+            long vmnum_host = (long)Math.floor(vmnum_dc/hostNum);
             //ホスト数分だけのループ
             for(int j=0;j<hostNum;j++) {
                 //ComputeHostの生成
@@ -143,7 +144,7 @@ public class AutoEnvironment extends NFVEnvironment {
                 int realVMNum = (int)Math.max(vm_num, vmnum_host);
                 for(int v=0;v<vmnum_host;v++){
                     if(!isMoreVM){
-                        break;
+                        //break;
                     }
                     if(vm_totalNum > CCNUtil.ccn_router_num){
                         break;
@@ -161,11 +162,18 @@ public class AutoEnvironment extends NFVEnvironment {
 
                    // int realLen = Math.min(vcpu_num, vQueue.size());
                     //int realLen = vcpu_num;
-                    int realLen = (int)Math.ceil(vQueue.size() / vmnum_host);
+
+                    //int realLen = (int)Math.floor(vQueue.size() / vmnum_host);
+                    int realLen = (int)((Math.floor(Calc.getRoundedValue((double)vQueue.size()/(double)vmnum_host)+1)));
 
                     for(int q=0;q<realLen;q++){
+                      /*  if(vQueue.isEmpty()){
+                           // isMoreVM = false;
+                            break;
+                        }
+
+                       */
                         if(vQueue.isEmpty()){
-                            isMoreVM = false;
                             break;
                         }
                         //先程追加したキューから，vcpuを取り出して入れる．
@@ -213,6 +221,7 @@ public class AutoEnvironment extends NFVEnvironment {
                     this.global_vmMap.put(vmPrefix, r);
 
                 }
+
 
             }
 

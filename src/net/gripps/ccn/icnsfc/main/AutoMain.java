@@ -43,7 +43,7 @@ public class AutoMain {
 
             //CCNMgr: ルータ, ノードのDB
             CCNMgr.getIns().setSFCMode(true);
-                //まずはクラウド側の初期設定
+            //まずはクラウド側の初期設定
             AutoEnvironment env = new AutoEnvironment();
             AutoSFCMgr.getIns().setEnv(env);
             StatisticalMgr sMgr = new StatisticalMgr();

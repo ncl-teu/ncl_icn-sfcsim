@@ -152,6 +152,13 @@ public class CCNUtil extends CloudUtil {
 
     public static  long ccn_chord_pit_threshold;
 
+    public static long ccn_hop_per_delay_min;
+
+    public static long ccn_hop_per_delay_max;
+
+    public static double ccn_hop_per_delay_mu;
+
+
 
 
 
@@ -226,6 +233,12 @@ public class CCNUtil extends CloudUtil {
             CCNUtil.ccn_node_routernum = Integer.valueOf(CCNUtil.prop.getProperty("ccn_node_routernum"));
             CCNUtil.ccn_routing_no = Integer.valueOf(CCNUtil.prop.getProperty("ccn_routing_no"));
             CCNUtil.ccn_hop_per_delay = Long.valueOf(CCNUtil.prop.getProperty("ccn_hop_per_delay"));
+
+            CCNUtil.ccn_hop_per_delay_min = Long.valueOf(CCNUtil.prop.getProperty("ccn_hop_per_delay_min"));
+            CCNUtil.ccn_hop_per_delay_max = Long.valueOf(CCNUtil.prop.getProperty("ccn_hop_per_delay_max"));
+            CCNUtil.ccn_hop_per_delay_mu = Double.valueOf(CCNUtil.prop.getProperty("ccn_hop_per_delay_mu")).doubleValue();
+
+
             CCNUtil.ccn_actual_data_rate = Double.valueOf(CCNUtil.prop.getProperty("ccn_actual_data_rate")).doubleValue();
 
             CCNUtil.ccn_caching_no =  Integer.valueOf(CCNUtil.prop.getProperty("ccn_caching_no"));

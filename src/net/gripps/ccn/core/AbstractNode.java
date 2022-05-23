@@ -42,6 +42,10 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
     protected  LinkedBlockingQueue<CCNContents> contentsQueue;
 
     protected CCNDataReceiver receiver;
+    /*
+    このノードの処理遅延
+     */
+    protected long ccn_hop_per_delay;
 
 
 
@@ -79,6 +83,9 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
         this.contentsQueue = new LinkedBlockingQueue<CCNContents>();
         this.receiver = new CCNDataReceiver(this.contentsQueue, this.bw*CCNUtil.ccn_actual_data_rate);
         this.sfcMap = new HashMap<Long, SFC>();
+        //遅延を計算する．
+        this.ccn_hop_per_delay = CCNUtil.genLong2(CCNUtil.ccn_hop_per_delay_min,
+                CCNUtil.ccn_hop_per_delay_max, 1, CCNUtil.ccn_hop_per_delay_mu);
 
       //  this.maxCapacity = maxCapacity;
     }
@@ -154,6 +161,14 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
         this.usedRouting = usedRouting;
     }
 
+    public long getCcn_hop_per_delay() {
+        return ccn_hop_per_delay;
+    }
+
+    public void setCcn_hop_per_delay(long ccn_hop_per_delay) {
+        this.ccn_hop_per_delay = ccn_hop_per_delay;
+    }
+
     /**
      * キューに追加する処理．
      * データを送信する場合は，必ずこの処理を呼び出してください．
@@ -169,14 +184,18 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
             CCNContentsInfo info = new CCNContentsInfo(c, c.getSize(), c.getSize());
             this.receiver.tmpQueue.offer(info);
         }else{
+            //System.out.println("***OKIKI***");
             try{
-                Thread.sleep(CCNUtil.ccn_hop_per_delay);
+                Thread.sleep(this.ccn_hop_per_delay);
                 int currentSize = this.contentsQueue.size()+1;
                 long minBW = Math.min(this.getBw()/currentSize, c.getMinBW());
                 c.setMinBW(minBW);
+                if(c.isCache){
+
+                }
                 this.contentsQueue.offer(c);
-               // long minBW = c.getMinBW();
-             /*   if(minBW >= this.getBw()){
+               //long minBW = c.getMinBW();
+               /*if(minBW >= this.getBw()){
                     c.setMinBW(this.getBw());
                 }
             */

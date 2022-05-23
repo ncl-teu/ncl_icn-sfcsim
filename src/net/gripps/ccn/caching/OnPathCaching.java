@@ -36,6 +36,9 @@ public class OnPathCaching extends BaseCachingAlgorithm {
         Face f= new Face(null, r.getRouterID(), CCNUtil.NODETYPE_ROUTER);
         //隣接ルータに対して，それらのFIBに，当該ルータへのポインタを追加しておく．
         //this.addFacetoFIB(c.getPrefix(), f, r);
+        Iterator<CCNContents> cIte = r.getCSEntry().getCacheMap().values().iterator();
+
+
 
         return true;
     }
@@ -76,6 +79,22 @@ public class OnPathCaching extends BaseCachingAlgorithm {
 
     @Override
     public boolean chachingIFCSFULL(CCNContents c, CCNRouter r) {
+        Iterator<CCNContents> cIte = r.getCSEntry().getCacheMap().values().iterator();
+
+        long minTime = Long.MAX_VALUE;
+        CCNContents retContent = null;
+        while(cIte.hasNext()){
+            CCNContents content = cIte.next();
+            long time = c.getGeneratedTimeAtCache();
+            if (time <= minTime){
+                minTime = time;
+                retContent = content;
+            }
+        }
+        //retContetを消す．そしてcを追加．
+        r.getCSEntry().getCacheMap().remove(retContent.getPrefix());
+        r.getCSEntry().getCacheMap().put(c.getPrefix(),c);
+
         return false;
     }
 }

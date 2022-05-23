@@ -118,6 +118,8 @@ public class CCNContents implements Serializable, Cloneable{
 
 
 
+
+
     /**
      *
      * @param size

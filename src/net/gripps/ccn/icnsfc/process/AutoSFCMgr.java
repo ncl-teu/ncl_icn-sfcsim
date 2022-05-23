@@ -337,6 +337,9 @@ public class AutoSFCMgr implements Serializable {
     }
 
     public String genSFInsID(VNF vnf, VM vm){
+        if(vm == null){
+            return null;
+        }
         Integer vnfID = Integer.valueOf(vnf.getType());
         StringBuffer buf = new StringBuffer(String.valueOf(vnfID));
         buf.append("^");

@@ -51,7 +51,6 @@ public class CCNDataReceiver implements Runnable{
         //キューから取り出して，計算して，またaddする．
         while(true){
             try{
-
                 Thread.sleep(CCNUtil.ccn_hop_per_delay);
 
                 long maxConNum = 0;

@@ -45,6 +45,9 @@ public class MWRouting extends AutoRouting{
         //指定のprefixから選ぶ，という意味では，まずはFIBから取得する必要がある．
         //それから，vCPUマップから選ぶスタイル．
         CCNRouter retRouter = (CCNRouter)this.findVM(AutoSFCMgr.getIns().getEnv(), endTask.getvCPUID());
+        if(retRouter == null){
+            System.out.println();
+        }
 
         return retRouter;
 
