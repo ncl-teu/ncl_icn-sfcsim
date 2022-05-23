@@ -36,7 +36,6 @@ public class CVFTest {
 
 
 
-
         //次はクラウド環境の生成
         //設定値の読み込みを行う．
         CloudUtil.getInstance().initialize(fileName);

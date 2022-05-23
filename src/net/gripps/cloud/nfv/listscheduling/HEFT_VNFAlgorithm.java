@@ -65,4 +65,5 @@ public class HEFT_VNFAlgorithm extends BaseVNFSchedulingAlgorithm {
         //応答時間を決める．
         this.makeSpan = val;
     }
+
 }

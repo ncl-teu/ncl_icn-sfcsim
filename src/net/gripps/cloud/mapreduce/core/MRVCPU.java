@@ -457,9 +457,7 @@ public class MRVCPU extends VCPU {
                 }
             }
         }
-
         Iterator<KeyElement> keyIte = mfs.getKeyElementMap().values().iterator();
-
         while(keyIte.hasNext()){
             KeyElement  ele = keyIte.next();
             //当該キーを保持するReducerを取得．
@@ -480,11 +478,8 @@ public class MRVCPU extends VCPU {
                         "keyID,"+ ele.getKey()+","+"comTime,"+comTime);
                 this.process(comTime);
                 reducer.getSfQueue().offer(ele);
-
             }
-
         }
-
         //super.shuffleSendProcess(mfs);
     }
 

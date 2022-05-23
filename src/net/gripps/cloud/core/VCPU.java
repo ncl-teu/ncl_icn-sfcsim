@@ -153,6 +153,7 @@ public class VCPU extends CPU  implements Runnable, IMapReduce {
                         double dlTime = AutoSFCMgr.getIns().calcImageDLTime(vnf, this);
                         time += dlTime;
 
+
                         long start = System.currentTimeMillis();
                         Thread.sleep((long)(time*1000));
                         long end = System.currentTimeMillis();

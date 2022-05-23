@@ -8,6 +8,7 @@ import net.gripps.cloud.nfv.NFVUtil;
 import net.gripps.cloud.nfv.clustering.SF_CUVAlgorithm;
 import net.gripps.cloud.nfv.clustering.RandomVNFClusteringAlgorithm;
 import net.gripps.cloud.nfv.listscheduling.FWS_VNFAlgorithm;
+import net.gripps.cloud.nfv.listscheduling.HEFTDAlgorithm;
 import net.gripps.cloud.nfv.listscheduling.HEFT_VNFAlgorithm;
 import net.gripps.cloud.nfv.listscheduling.PEFT_VNFAlgorithm;
 import net.gripps.cloud.nfv.optimization.CoordVNFAlgorithm;
@@ -122,6 +123,10 @@ public class NFVSchedulingTest {
         System.out.println("SLR[PEFT]:"+NFVUtil.getRoundedValue(peft.getMakeSpan()/peft.getTotalCPProcTimeAtMaxSpeed()) +" / # of vCPUs: "+peft.getAssignedVCPUMap().size()+ "/ # of Hosts:"+peft.getHostSet().size()
                 +"/# of Ins:"+peft.calcTotalFunctionInstanceNum());
 
+        HEFTDAlgorithm heftd = new HEFTDAlgorithm(env, sfc);
+        heftd.mainProcess();
+        System.out.println("SLR[HEFTD]:"+NFVUtil.getRoundedValue(heftd.getMakeSpan()/heftd.getTotalCPProcTimeAtMaxSpeed()) +" / # of vCPUs: "+heftd.getAssignedVCPUMap().size()+ "/ # of Hosts:"+heftd.getHostSet().size()
+                +"/# of Ins:"+heftd.calcTotalFunctionInstanceNum());
 
         SF_CUVAlgorithm alg5 = new SF_CUVAlgorithm(env5, sfc5);
         //alg5.setUpdateMode(0);

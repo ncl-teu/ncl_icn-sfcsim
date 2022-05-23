@@ -138,6 +138,7 @@ public class VNF  implements Serializable{
 
     protected Long dominantWSTSucID;
 
+
     /**
      * このVNFをvCPUへ割り当てることによる，使用率の増分．
      * %単位．

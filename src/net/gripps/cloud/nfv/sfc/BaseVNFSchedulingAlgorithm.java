@@ -587,6 +587,7 @@ public class BaseVNFSchedulingAlgorithm {
 
     public boolean addVNFQueue(VCPU vcpu, VNF vnf) {
         PriorityQueue<VNF> queue = vcpu.getVnfQueue();
+
         Iterator<VNF> vITe = queue.iterator();
         boolean isFound = false;
         while (vITe.hasNext()) {
@@ -722,6 +723,7 @@ public class BaseVNFSchedulingAlgorithm {
                 //次の要素の開始時刻を取得する．
                 VNF t2 = ((VNF) oa[i + 1]);
                 double start_time2 = t2.getStartTime();
+
                 double s_candidateTime = Math.max(finish_time, arrival_time);
                 //当該タスクの終了時刻を計算する．
                 double ftime = s_candidateTime + this.calcExecTime(vnf.getWorkLoad(), cpu);

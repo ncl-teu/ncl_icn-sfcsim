@@ -116,6 +116,7 @@ public class SFC  extends VNF implements Serializable {
     public  synchronized Serializable deepCopy(){
         //System.gc();
 
+
         try{
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(bout);

@@ -130,6 +130,7 @@ public class HierarchicalVNFClusteringAlgorithm extends AbstractVNFClusteringAlg
                     break;
                 }
                 VCPU vcpu = pw_vCPU_list.get(vcpu_num);
+
                 VNFCluster cluster = cIte.next();
                 this.assignVCPU(cluster, vcpu);
                 vcpu_num++;
@@ -140,6 +141,7 @@ public class HierarchicalVNFClusteringAlgorithm extends AbstractVNFClusteringAlg
         int seted_VNF = 0;
         while (!this.unScheduledVNFSet.isEmpty()) {
             VNF vnf = this.selectVNF();
+
             VCPU vcpu = this.env.getGlobal_vcpuMap().get(vnf.getvCPUID());
             HashMap<String, VCPU> map = new HashMap<String, VCPU>();
             map.put(vnf.getvCPUID(), vcpu);
