@@ -18,11 +18,22 @@ public class FIB {
         this.table = table;
     }
 
+    public boolean lock;
+
     /**
      *
      */
     public FIB() {
         this.table = new HashMap<String, LinkedList<Face>>();
+        this.lock = false;
+    }
+
+    public boolean isLock() {
+        return lock;
+    }
+
+    public void setLock(boolean lock) {
+        this.lock = lock;
     }
 
     /**
@@ -32,6 +43,8 @@ public class FIB {
      * @return
      */
     public boolean addFace(String prefix, Face f){
+
+
         if(this.table.containsKey(prefix)){
             //次に，リストから同一faceの物があるかを調べる．
             LinkedList<Face> fList = this.table.get(prefix);

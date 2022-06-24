@@ -12,6 +12,7 @@ import net.gripps.ccn.caching.OnPathCaching;
 import net.gripps.ccn.caching.OnPathPlus;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
+import net.gripps.ccn.icnsfc.fnj.PassiveTimer;
 import net.gripps.ccn.icnsfc.logger.ISLog;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.icnsfc.routing.AutoRouting;
@@ -26,11 +27,9 @@ import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.util.CopyUtil;
 import org.ncl.workflow.util.NCLWUtil;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by kanemih on 2018/11/02.
@@ -188,6 +187,16 @@ public class CCNRouter extends AbstractNode {
     @Override
     public void run() {
         try {
+            //Passiveモードの場合は，Interestによるタスク処理結果の送信スケジュールを行う．
+            if(AutoUtil.fnj_checkmode == 1){
+                Timer timer = new Timer();
+
+                PassiveTimer ex = new PassiveTimer(this);
+                //指定時間間隔で，ExchangeTimerを実行する．
+                //各ノードで，指定ms + 0~1000ms程度のばらつきの時間間隔とする．
+                timer.scheduleAtFixedRate(ex, 5000, AutoUtil.fnj_passive_duration + CCNUtil.genLong(0, 1000));
+
+            }
             /**
              * パケットを転送するためのループ
              */
@@ -271,7 +280,14 @@ public class CCNRouter extends AbstractNode {
         SFC sfc = this.sfcMap.get(jobID);
 
         HashMap<String, Face> removeMap = new HashMap<String, Face>();
-
+        if(sfc == null){
+            //ルータにとって未知のジョブであれば，どっかから取ってくる．
+            //interst送信時に認識しているはずだが，キャッシュとして送られた場合は，
+            //その限りではない．つまり，
+           //sfc = AutoSFCMgr.getIns().
+            sfc = AutoSFCMgr.getIns().getSfcMap().get(jobID);
+            //System.out.println();
+        }
         String prefix = AutoSFCMgr.getIns().createPrefix(sfc.findVNFByLastID(fromID), sfc.findVNFByLastID(toID));
 
 
@@ -281,6 +297,7 @@ public class CCNRouter extends AbstractNode {
             LinkedList<Face> fList = this.getPITEntry().getTable().get(prefix);
             len = fList.size();
             Iterator<Face> fIte = fList.iterator();
+            HashMap<String, Face> removeFaceMap = new HashMap<String, Face>();
             while(fIte.hasNext()){
                 Face face = fIte.next();
                 if(face.getType()==CCNUtil.NODETYPE_ROUTER){
@@ -298,18 +315,30 @@ public class CCNRouter extends AbstractNode {
 
 
                     }
-                    this.getPITEntry().removeFace(prefix, face);
+                    removeFaceMap.put(prefix, face);
+                   // this.getPITEntry().removeFace(prefix, face);
 
                 }else{
                     CCNNode n = CCNMgr.getIns().getNodeMap().get(face.getPointerID());
                     this.cacheContents(c, prefix);
                     c.setAplID(sfc.getAplID());
+                    c.setCache(true);
+                    c.setFNJ(true);
 //Dataの転送を実行を分けてしまっているのが問題．
                     n.forwardData(c);
-                    this.getPITEntry().removeFace(prefix, face);
+                   // removeFList.add(face);
+                    //this.getPITEntry().removeFace(prefix, face);
+                    removeFaceMap.put(prefix, face);
 
                 }
                 removeMap.put(prefix, face);
+            }
+            Iterator<String> pIte = removeFaceMap.keySet().iterator();
+            while(pIte.hasNext()){
+                String pre = pIte.next();
+                Face f = removeFaceMap.get(pre);
+                this.getPITEntry().removeFace(pre, f);
+
             }
             //Pitから削除
             // this.getPITEntry().getTable().remove(prefix);
@@ -379,6 +408,8 @@ public class CCNRouter extends AbstractNode {
 
             }else{
                 toVNF.setAplID(sfc.getAplID());
+                //FNJ問題において，ActiveCheckの処理が走る．
+
                 targetVCPU.exec(toVNF);
                 AutoEnvironment env = AutoSFCMgr.getIns().getEnv();
                 VM vm = env.getGlobal_vmMap().get(targetVCPU.getVMID());
@@ -398,11 +429,80 @@ public class CCNRouter extends AbstractNode {
 
     }
 
+    public synchronized boolean FNJ_ActiveSend(CCNContents cache){
+        Iterator<String> pIte = this.FIBEntry.getTable().keySet().iterator();
+
+
+        //FIBのprefixに対するループ（レコード単位）
+        LinkedList<Face> faceList = new LinkedList<Face>();
+
+        String prefix = cache.getPrefix();
+        while(pIte.hasNext()){
+            LinkedList<Face> fList = this.FIBEntry.getTable().get(pIte.next());
+            Iterator<Face> fIte = fList.iterator();
+            while(fIte.hasNext()){
+                Face f = fIte.next();
+                if(f.getType() == CCNUtil.NODETYPE_ROUTER){
+
+                    CCNRouter router = CCNMgr.getIns().getRouterMap().get(f.getPointerID());
+                    LinkedList<ForwardHistory> forwardList = new LinkedList<ForwardHistory>();
+
+                    InterestPacket p = new InterestPacket(AutoUtil.FNJ_ACTIVE, new Long(-1),
+                            1500, this.getRouterID(), -1,forwardList );
+                    //Cacheの情報をInterestパケットにセットする．
+                    p.getAppParams().put(AutoUtil.FNJ_ACTIVE, cache);
+                    //Faceに向けて情報を送信する．
+                    ForwardHistory newHistory = new ForwardHistory(this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
+                            (long)router.getRouterID(), CCNUtil.NODETYPE_ROUTER, System.currentTimeMillis(), -1);
+                    p.getHistoryList().add(newHistory);
+                    Face tFace = null;
+                    if(!this.getFace_routerMap().containsKey(router.getRouterID())){
+                        tFace = new Face(null, router.getRouterID(), CCNUtil.NODETYPE_ROUTER);
+                        this.getFace_routerMap().put(router.getRouterID(), tFace);
+
+                    }else{
+                        tFace = this.getFace_routerMap().get(router.getRouterID());
+
+                    }
+                    //this.FIBEntry.setLock(false);
+                    faceList.add(tFace);
+
+                    synchronized (this.FIBEntry){
+                        //FIBに登録する．
+                        //this.FIBEntry.addFace(p.getPrefix(), tFace);
+                    }
+
+                    //router.addFacetoPit(p, this.getRouterID(), CCNUtil.NODETYPE_ROUTER);
+                    //ルータへ転送する．
+                    router.forwardInterest(tFace,p);
+
+                }
+
+            }
+
+        }
+        Iterator<Face> retFIte = faceList.iterator();
+        while(retFIte.hasNext()){
+            Face f = retFIte.next();
+            this.FIBEntry.addFace(prefix, f);
+        }
+        return true;
+    }
+
     public void cacheContents(CCNContents contents, String prefix){
         //キャッシュだけする．
         //System.out.println("***Chached:"+prefix+"@"+this.getRouterID());
 
         CCNContents copyContents = (CCNContents) contents.deepCopy();
+        copyContents.setGeneratedTimeAtCache(System.currentTimeMillis());
+        switch(AutoUtil.fnj_checkmode){
+            case 0:
+            this.FNJ_ActiveSend(copyContents);
+            break;
+            default:
+                break;
+        }
+
         if (this.cs_num <= this.CSEntry.getCacheMap().size()) {
             this.usedCaching.chachingIFCSFULL(copyContents, this);
         } else {
@@ -428,6 +528,12 @@ public class CCNRouter extends AbstractNode {
 
 
             } else {
+                if(c.isFNJ()){
+                    //FNJであれば，終わり．
+                    c.setFNJ(false);
+                    this.cacheContents(c, c.getPrefix());
+                    return;
+                }
                 ForwardHistory lastH = c.getHistoryList().getLast();
                 lastH.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
                 //キャッシュでなければ，BCチェックをする．
@@ -507,16 +613,7 @@ public class CCNRouter extends AbstractNode {
                             }
 
                         }
-
-
-                        CCNContents copyContents = (CCNContents) c.deepCopy();
-                        long currentTime = System.currentTimeMillis();
-                        if (this.cs_num <= this.CSEntry.getCacheMap().size()) {
-                            this.usedCaching.chachingIFCSFULL(c, this);
-                        } else {
-                            //キャッシング処理
-                            this.usedCaching.cachingProcess(copyContents, this);
-                        }
+                        this.cacheContents(c, c.getPrefix());
 
                     }
                     //そしてPITからエントリを削除する．
@@ -629,6 +726,8 @@ public class CCNRouter extends AbstractNode {
                     //キャッシュだけする．
                     CCNContents c = new CCNContents(0, prefix, this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
                             System.currentTimeMillis(), -1, false);
+                    ///CCNContents cache = (CCNContents) c.deepCopy();
+                    //cache.setGeneratedTimeAtCache(System.currentTimeMillis());
                     //キャッシュ
                     this.cacheContents(c, prefix);
                     c.setAplID(vnf.getAplID());
@@ -716,6 +815,23 @@ public class CCNRouter extends AbstractNode {
         return true;
     }
 
+
+    public CCNContents getLatestExecCache(){
+        Iterator<CCNContents> cIte = this.CSEntry.getCacheMap().values().iterator();
+        long MaxTime = -1;
+        CCNContents ret = null;
+        while(cIte.hasNext()){
+            CCNContents c = cIte.next();
+            if(MaxTime <= c.getGeneratedTimeAtCache()){
+                MaxTime = c.getGeneratedTimeAtCache();
+                ret = c;
+            }
+        }
+
+        return ret;
+
+    }
+
     /**
      * InrerestPacketを処理します．
      * 1. CSをみて，コンテンツがないかチェックする．
@@ -728,7 +844,10 @@ public class CCNRouter extends AbstractNode {
     public void processInterest(InterestPacket p) {
         ForwardHistory h = p.getHistoryList().getLast();
         SFC sfc = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
-        AutoSFCMgr.getIns().saveStartTime(p, sfc);
+        if(sfc != null){
+            AutoSFCMgr.getIns().saveStartTime(p, sfc);
+        }
+
 
         //とりあえずhの到着時刻を設定
         h.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
@@ -742,6 +861,77 @@ public class CCNRouter extends AbstractNode {
             return;
         }
         LinkedList<ForwardHistory> fList = p.getHistoryList();
+        //事前処理
+        /////////FNJ問題への対処////////////
+        if(p.getPrefix().equals(AutoUtil.FNJ_ACTIVE)){
+            //パケットを取り出す．
+            CCNContents contents = (CCNContents)p.getAppParams().get(AutoUtil.FNJ_ACTIVE);
+            //送信元ルータID
+            Long srcID = p.getFromNodeId();
+            //そしてコンテンツをキャッシュする．
+            this.CSEntry.getCacheMap().put(contents.getPrefix(), contents);
+            Face srcFace = null;
+            //そしてFIBに登録する．
+            if(this.containsIDinRouterFaceMap(srcID)){
+                srcFace = this.findFaceByID(srcID, this.face_routerMap);
+
+            }else{
+                srcFace = new Face(null, toID, toType);
+                this.addFace(srcFace, this.face_routerMap);
+
+            }
+            //FIBに追加する．
+            this.FIBEntry.addFace(contents.getPrefix(), srcFace);
+            return;
+
+
+        }else if(p.getPrefix().equals(AutoUtil.FNJ_PASSIVE)){
+            //パケットを取り出す．
+            //CCNContents contents = (CCNContents)p.getAppParams().get(AutoUtil.FNJ_PASSIVE);
+            //送信元ルータID
+            Long srcID = p.getFromNodeId();
+            //そしてコンテンツをキャッシュする．
+           // this.CSEntry.getCacheMap().put(contents.getPrefix(), contents);
+            Face srcFace = null;
+            //まずはmapに登録．
+            if(this.containsIDinRouterFaceMap(srcID)){
+                srcFace = this.findFaceByID(srcID, this.face_routerMap);
+
+            }else{
+                srcFace = new Face(null, toID, toType);
+                this.addFace(srcFace, this.face_routerMap);
+
+            }
+            //自分が持っているContentsを送信する．
+            CCNContents c = this.getLatestExecCache();
+            if(c == null){
+                return;
+            }else{
+                //あれば，Contentsを返す処理を行う．
+                c.getHistoryList().clear();
+
+                CCNRouter r = CCNMgr.getIns().getRouterMap().get(srcFace.getPointerID());
+
+                // System.out.println("<CS内キャッシュを要求元ルータへ返送> from " + "Router" + this.routerID + "-->" + "Router" + toID + " for prefix:" + p.getPrefix());
+                ForwardHistory f = new ForwardHistory(this.routerID, CCNUtil.NODETYPE_ROUTER, r.getRouterID(), CCNUtil.NODETYPE_ROUTER,
+                        System.currentTimeMillis(), -1);
+                f.getCustomMap().put("proctime", new Long(0));
+                c.getHistoryList().add(f);
+
+                r.forwardData(c);
+
+            }
+
+            //FIBに追加する．
+           // this.FIBEntry.addFace(contents.getPrefix(), srcFace);
+            return;
+        }else if(p.getPrefix().equals(AutoUtil.FNJ_HYBRID)){
+
+        }else{
+            //何もしない
+        }
+
+        ////////FNJ問題END ///////////////
 
         //もしCSにあれば，データを返す．
         //  if(!CCNMgr.getIns().isSFCMode()){

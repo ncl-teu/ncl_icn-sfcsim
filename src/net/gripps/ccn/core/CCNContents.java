@@ -116,6 +116,8 @@ public class CCNContents implements Serializable, Cloneable{
 
     private Long aplID;
 
+    private boolean isFNJ;
+
 
 
 
@@ -134,6 +136,7 @@ public class CCNContents implements Serializable, Cloneable{
         this.orgOwnerID = orgOwnerID;
         this.orgContentID = orgContentID;
         this.type = type;
+        this.isFNJ = false;
         //このコンテンツにUIDを設定する．
         String  cID = UUID.randomUUID().toString();
         this.setContentID(cID);
@@ -155,6 +158,14 @@ public class CCNContents implements Serializable, Cloneable{
 
         this.isIPUsed = false;
         this.aplID = -1L;
+    }
+
+    public boolean isFNJ() {
+        return isFNJ;
+    }
+
+    public void setFNJ(boolean FNJ) {
+        isFNJ = FNJ;
     }
 
     public Long getAplID() {

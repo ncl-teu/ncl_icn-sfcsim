@@ -38,6 +38,25 @@ public class AutoUtil  implements Serializable {
 
     public static int sched_altorithm;
 
+    //FNJ問題への対処
+    /**
+     * 0: Active
+     * 1: Passive
+     * 2: Hybrid
+     * Else: No check
+     */
+    public static int fnj_checkmode;
+
+    public static String FNJ_ACTIVE = "FNJ_ACTIVE";
+
+    public static String FNJ_PASSIVE = "FNJ_PASSIVE";
+
+    public static String FNJ_HYBRID = "FNJ_HYBRID";
+
+    public static Long fnj_passive_duration;
+
+
+
 
     /**
      * 設定情報プロパティ
@@ -66,6 +85,10 @@ public class AutoUtil  implements Serializable {
             AutoUtil.sfc_vnf_num_max= Long.valueOf(AutoUtil.prop.getProperty("sfc_vnf_num_max"));
             AutoUtil.ccn_sfc_mode = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_mode"));
             AutoUtil.sched_altorithm = Integer.valueOf(AutoUtil.prop.getProperty("sched_algorithm"));
+            AutoUtil.fnj_checkmode = Integer.valueOf(AutoUtil.prop.getProperty("fnj_checkmode"));
+            AutoUtil.fnj_passive_duration = Long.valueOf(AutoUtil.prop.getProperty("fnj_passive_duration"));
+
+
 
 
 

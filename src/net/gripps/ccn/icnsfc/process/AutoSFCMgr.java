@@ -66,6 +66,9 @@ public class AutoSFCMgr implements Serializable {
 
     protected boolean isSFC;
 
+    protected HashMap<Long, SFC> sfcMap;
+
+
 
     public static AutoSFCMgr getIns(){
         if(AutoSFCMgr.own == null){
@@ -76,6 +79,7 @@ public class AutoSFCMgr implements Serializable {
     }
 
     private AutoSFCMgr(){
+        this.sfcMap = new HashMap<Long, SFC>();
         this.SFCNum = 0;
         this.sfcQueue = new LinkedBlockingDeque<SFC>();
         this.imgMap = new HashMap<String, Long>();
@@ -92,6 +96,14 @@ public class AutoSFCMgr implements Serializable {
         this.isSFC = false;
 
 
+    }
+
+    public HashMap<Long, SFC> getSfcMap() {
+        return sfcMap;
+    }
+
+    public void setSfcMap(HashMap<Long, SFC> sfcMap) {
+        this.sfcMap = sfcMap;
     }
 
     public boolean isSFC() {
@@ -257,7 +269,9 @@ public class AutoSFCMgr implements Serializable {
 
     }
     public double calcImageDLTime(VNF vnf, VM vm){
-
+        if(vm == null){
+            return 0.0;
+        }
         double imageSize = vnf.getImageSize();
 
         ComputeHost host = env.getGlobal_hostMap().get(vm.getHostID());
@@ -290,6 +304,7 @@ public class AutoSFCMgr implements Serializable {
         //IDを付与する．
         this.SFCNum ++;
         sfc.setSfcID(this.SFCNum);
+        this.sfcMap.put(sfc.getSfcID(), sfc);
 
 
         //あとは，各タスクのIDを変更する．
@@ -315,6 +330,7 @@ public class AutoSFCMgr implements Serializable {
     public SFC replicateSFC(SFC orgSFC){
         SFC newSFC = (SFC)orgSFC.deepCopy();
         this.sfcQueue.add(newSFC);
+
         this.SFCNum++;
         return newSFC;
     }
@@ -440,6 +456,9 @@ public class AutoSFCMgr implements Serializable {
 
     public void saveUpdatedVM(SFC sfc, VM vm){
         if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        if(vm == null){
             return;
         }
         String id = this.genAutoID(sfc);

@@ -24,7 +24,11 @@ public class PIT extends FIB{
      * @return
      */
     public synchronized boolean removeFace(String prefix, Face face){
+        if(!this.getTable().containsKey(prefix)){
+            return false;
+        }
         Iterator<Face> fIte = this.getTable().get(prefix).iterator();
+
         Face retFace = null;
        // int idx = 0;
 
