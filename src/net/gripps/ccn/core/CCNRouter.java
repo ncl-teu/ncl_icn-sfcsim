@@ -1131,7 +1131,7 @@ public class CCNRouter extends AbstractNode {
                         //先行タスク用のprefixを生成する．
                         Iterator<DataDependence> dpredIte = predVNF.getDpredList().iterator();
 
-                        //branch "feature-predVNF-ordering" 用のテストコード
+                        //branch "feature-predVNF-ordering" 用のコード
                         //predVNF orderingのモードを取得
                         Integer vnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_vnf_ordering_mode"));
                         if(vnf_ordering_mode == 1){
@@ -1149,7 +1149,23 @@ public class CCNRouter extends AbstractNode {
                             };
                             sortingDpredList.sort(comparator);
                             dpredIte = sortingDpredList.iterator();
-                        } //branch "feature-predVNF-ordering" 用のテストコード
+                        }else if(vnf_ordering_mode == 2) {
+
+                            LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
+                            Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
+                                @Override
+                                public int compare(DataDependence Dpred1, DataDependence Dpred2) {
+                                    VNF VNF1 = sfc_int.findVNFByLastID(Dpred1.getFromID().get(1));
+                                    VNF VNF2 = sfc_int.findVNFByLastID(Dpred2.getFromID().get(1));
+                                    System.out.println("BlevelWST of VNF1: " + VNF1.getBlevelWST());
+                                    System.out.println("BlevelWST of VNF2: " + VNF2.getBlevelWST());
+
+                                    return Double.valueOf(VNF2.getBlevelWST()).compareTo(Double.valueOf(VNF1.getBlevelWST()));
+                                }
+                            };
+                            sortingDpredList.sort(comparator);
+                            dpredIte = sortingDpredList.iterator();
+                        }//branch "feature-predVNF-ordering" 用のコード
 
                         while(dpredIte.hasNext()){
                             DataDependence dpred = dpredIte.next();
