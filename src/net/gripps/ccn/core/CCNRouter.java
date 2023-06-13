@@ -1157,10 +1157,11 @@ public class CCNRouter extends AbstractNode {
                                 public int compare(DataDependence Dpred1, DataDependence Dpred2) {
                                     VNF VNF1 = sfc_int.findVNFByLastID(Dpred1.getFromID().get(1));
                                     VNF VNF2 = sfc_int.findVNFByLastID(Dpred2.getFromID().get(1));
-                                    System.out.println("BlevelWST of VNF1: " + VNF1.getBlevelWST());
-                                    System.out.println("BlevelWST of VNF2: " + VNF2.getBlevelWST());
 
-                                    return Double.valueOf(VNF2.getBlevelWST()).compareTo(Double.valueOf(VNF1.getBlevelWST()));
+                                    double VNF1BlevelWST = auto.calcBlevelWST(VNF1, vcpu, sfc_int);
+                                    double VNF2BlevelWST = auto.calcBlevelWST(VNF2, vcpu, sfc_int);
+
+                                    return Double.valueOf(VNF2BlevelWST).compareTo(Double.valueOf(VNF1BlevelWST));
                                 }
                             };
                             sortingDpredList.sort(comparator);
