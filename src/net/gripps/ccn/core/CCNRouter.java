@@ -1131,7 +1131,7 @@ public class CCNRouter extends AbstractNode {
                         //先行タスク用のprefixを生成する．
                         Iterator<DataDependence> dpredIte = predVNF.getDpredList().iterator();
 
-                        //branch "feature-predVNF-ordering" 用のコード
+                        //Interestパケットの並び変えのためのコード
                         //predVNF orderingのモードを取得
                         Integer vnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_vnf_ordering_mode"));
                         if(vnf_ordering_mode == 1){
