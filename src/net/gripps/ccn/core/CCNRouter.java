@@ -1130,6 +1130,44 @@ public class CCNRouter extends AbstractNode {
                         //そして，predVNFのVNFへInterestパケットを投げる．
                         //先行タスク用のprefixを生成する．
                         Iterator<DataDependence> dpredIte = predVNF.getDpredList().iterator();
+
+                        //Interestパケットの並び変えのためのコード
+                        //predVNF orderingのモードを取得
+                        Integer vnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_vnf_ordering_mode"));
+                        if(vnf_ordering_mode == 1){
+                            
+                            LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
+                            Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
+                                @Override
+                                public int compare(DataDependence Dpred1, DataDependence Dpred2) {
+                                    VNF VNF1 = sfc_int.findVNFByLastID(Dpred1.getFromID().get(1));
+                                    VNF VNF2 = sfc_int.findVNFByLastID(Dpred2.getFromID().get(1));
+
+                                    return Long.valueOf(VNF2.getWorkLoad()).compareTo(Long.valueOf(VNF1.getWorkLoad()));
+                                }
+                                
+                            };
+                            sortingDpredList.sort(comparator);
+                            dpredIte = sortingDpredList.iterator();
+                        }else if(vnf_ordering_mode == 2) {
+
+                            LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
+                            Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
+                                @Override
+                                public int compare(DataDependence Dpred1, DataDependence Dpred2) {
+                                    VNF VNF1 = sfc_int.findVNFByLastID(Dpred1.getFromID().get(1));
+                                    VNF VNF2 = sfc_int.findVNFByLastID(Dpred2.getFromID().get(1));
+
+                                    double VNF1BlevelWST = auto.calcBlevelWST(VNF1, vcpu, sfc_int);
+                                    double VNF2BlevelWST = auto.calcBlevelWST(VNF2, vcpu, sfc_int);
+
+                                    return Double.valueOf(VNF2BlevelWST).compareTo(Double.valueOf(VNF1BlevelWST));
+                                }
+                            };
+                            sortingDpredList.sort(comparator);
+                            dpredIte = sortingDpredList.iterator();
+                        }//branch "feature-predVNF-ordering" 用のコード
+
                         while(dpredIte.hasNext()){
                             DataDependence dpred = dpredIte.next();
                             VNF ppVNF = sfc_int.findVNFByLastID(dpred.getFromID().get(1));
