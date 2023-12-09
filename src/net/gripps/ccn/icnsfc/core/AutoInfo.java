@@ -30,6 +30,11 @@ public class AutoInfo implements Serializable {
     private long finishTime;
 
     /**
+     * MakeSpanと関係なく，除外したい時間を格納する場所
+     */
+    private long processingTime;
+
+    /**
      * finish - start
      */
     private long makeSpan;
@@ -116,6 +121,14 @@ public class AutoInfo implements Serializable {
 
     public void setFinishTime(long finishTime) {
         this.finishTime = finishTime;
+    }
+
+    public long getProcessingTime() {
+        return processingTime;
+    }
+
+    public void setProcessingTime(long processingTime) {
+        this.processingTime = processingTime;
     }
 
     public long getMakeSpan() {

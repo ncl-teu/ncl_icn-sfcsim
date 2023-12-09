@@ -1135,7 +1135,9 @@ public class CCNRouter extends AbstractNode {
                         //predVNF orderingのモードを取得
                         Integer vnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_vnf_ordering_mode"));
                         if(vnf_ordering_mode == 1){
-                            
+                            long processStartTime = System.currentTimeMillis();
+
+                            // Interest ordering
                             LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
                             Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
                                 @Override
@@ -1149,8 +1151,15 @@ public class CCNRouter extends AbstractNode {
                             };
                             sortingDpredList.sort(comparator);
                             dpredIte = sortingDpredList.iterator();
-                        }else if(vnf_ordering_mode == 2) {
 
+                            // Set the time spent on Interest ordering
+                            long processEndTime = System.currentTimeMillis();
+                            long processingTime = processEndTime - processStartTime;
+                            AutoSFCMgr.getIns().saveProcessingTime(sfc_int, processingTime);
+                        }else if(vnf_ordering_mode == 2) {
+                            long processStartTime = System.currentTimeMillis();
+
+                            // Interest ordering
                             LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
                             Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
                                 @Override
@@ -1166,6 +1175,12 @@ public class CCNRouter extends AbstractNode {
                             };
                             sortingDpredList.sort(comparator);
                             dpredIte = sortingDpredList.iterator();
+
+                            // Set the time spent on Interest ordering
+                            long processEndTime = System.currentTimeMillis();
+                            long processingTime = processEndTime - processStartTime;
+                            AutoSFCMgr.getIns().saveProcessingTime(sfc_int, processingTime);
+
                         }//branch "feature-predVNF-ordering" 用のコード
 
                         while(dpredIte.hasNext()){

@@ -402,6 +402,7 @@ public class AutoSFCMgr implements Serializable {
         AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
         info.setFinishTime(finishTime);
         long makeSpan = finishTime - info.getStartTime();
+        makeSpan = makeSpan - info.getProcessingTime();
         info.setMakeSpan(makeSpan);
         this.addFinishCount();
 
@@ -425,6 +426,7 @@ public class AutoSFCMgr implements Serializable {
         AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
         info.setFinishTime(finishTime);
         long makeSpan = finishTime - info.getStartTime();
+        makeSpan = makeSpan - info.getProcessingTime();
         info.setMakeSpan(makeSpan);
         this.addFinishCount();
 
@@ -436,6 +438,14 @@ public class AutoSFCMgr implements Serializable {
        // this.outputResult();
         this.outputOneResult(info);
 
+    }
+
+    public void saveProcessingTime(SFC sfc, long processingTime) {
+        String id = this.genAutoID(sfc);
+
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        long totalProcessingTime = info.getProcessingTime() + processingTime;
+        info.setProcessingTime(totalProcessingTime);
     }
 
 
