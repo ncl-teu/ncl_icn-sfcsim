@@ -6,6 +6,7 @@ import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
 import net.gripps.ccn.icnsfc.core.AutoInfo;
 import net.gripps.ccn.icnsfc.logger.ISLog;
+import net.gripps.ccn.icnsfc.logger.ISNetworkGraphLog;
 import net.gripps.ccn.CCNUtil;
 import net.gripps.ccn.icnsfc.logger.StatisticalMgr;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
@@ -48,6 +49,12 @@ public class AutoMain {
             AutoSFCMgr.getIns().setEnv(env);
             StatisticalMgr sMgr = new StatisticalMgr();
             sMgr.initialize();
+            //ネットワーク環境の書き出し関連
+            int isWriteNW = Integer.parseInt(AutoUtil.prop.getProperty("iswritenw"));
+            String nwFileName = AutoUtil.prop.getProperty("nwfile");
+            if(isWriteNW == 1) {
+                    ISNetworkGraphLog.makeNetworkGraphLog(nwFileName);
+            }
 
             CCNMgr.getIns().process();
 
