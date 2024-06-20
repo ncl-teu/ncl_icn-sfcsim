@@ -1,5 +1,6 @@
 package net.gripps.ccn.core;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -7,7 +8,7 @@ import java.util.LinkedList;
 /**
  * Created by kanemih on 2018/11/02.
  */
-public class FIB {
+public class FIB implements Serializable {
     /**
      * (Name属性, Faceリスト)の対応付けのMap
      */

@@ -1,11 +1,12 @@
 package net.gripps.ccn.core;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
  * Created by kanemih on 2018/11/02.
  */
-public class CS {
+public class CS implements Serializable {
 
     /**
      * キャッシュテーブル

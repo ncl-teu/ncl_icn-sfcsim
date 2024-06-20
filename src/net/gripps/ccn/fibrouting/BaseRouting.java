@@ -7,13 +7,14 @@ import net.gripps.ccn.core.Face;
 import net.gripps.ccn.core.InterestPacket;
 import net.gripps.ccn.process.CCNMgr;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 
 /**
  * Created by Hidehiro Kanemitsu on 2018/12/03.
  */
-public abstract class BaseRouting {
+public abstract class BaseRouting implements Serializable {
 
     /**
      * ノード集合

@@ -4,9 +4,10 @@ import net.gripps.ccn.core.CCNContents;
 import net.gripps.ccn.core.CCNNode;
 import net.gripps.ccn.core.CCNRouter;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
-public abstract class BaseCachingAlgorithm {
+public abstract class BaseCachingAlgorithm implements Serializable {
 
     /**
      * ノードの集合

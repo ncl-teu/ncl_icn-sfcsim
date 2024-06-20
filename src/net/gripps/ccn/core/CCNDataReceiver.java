@@ -14,11 +14,12 @@ import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
 import org.ncl.workflow.util.NCLWUtil;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class CCNDataReceiver implements Runnable{
+public class CCNDataReceiver implements Runnable, Serializable {
 
 
     /**

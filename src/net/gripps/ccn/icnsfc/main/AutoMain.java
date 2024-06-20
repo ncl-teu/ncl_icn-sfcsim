@@ -7,6 +7,7 @@ import net.gripps.ccn.icnsfc.core.AutoEnvironment;
 import net.gripps.ccn.icnsfc.core.AutoInfo;
 import net.gripps.ccn.icnsfc.logger.ISLog;
 import net.gripps.ccn.icnsfc.logger.ISNetworkGraphLog;
+import net.gripps.ccn.icnsfc.logger.ISNetworkEnvLog;
 import net.gripps.ccn.CCNUtil;
 import net.gripps.ccn.icnsfc.logger.StatisticalMgr;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
@@ -41,19 +42,27 @@ public class AutoMain {
             CCNUtil.getIns().initialize(fileName);
             AutoUtil.getIns().initialize(fileName);
             AutoSFCMgr.getIns().setSFC(true);
+            int isWriteNW = Integer.parseInt(AutoUtil.prop.getProperty("iswritenw"));
+            int isLoadNW = Integer.parseInt(AutoUtil.prop.getProperty("isloadnw"));
+            String nwFileName = AutoUtil.prop.getProperty("nwfile");
 
             //CCNMgr: ルータ, ノードのDB
             CCNMgr.getIns().setSFCMode(true);
+            //ネットワーク環境の読み込み
+            AutoEnvironment env = null;
+            if(isLoadNW == 1) {
+                    env = ISNetworkEnvLog.getNetworkEnvLog(nwFileName);
+            }else {
+                    env = new AutoEnvironment();
+            }
             //まずはクラウド側の初期設定
-            AutoEnvironment env = new AutoEnvironment();
             AutoSFCMgr.getIns().setEnv(env);
             StatisticalMgr sMgr = new StatisticalMgr();
             sMgr.initialize();
-            //ネットワーク環境の書き出し関連
-            int isWriteNW = Integer.parseInt(AutoUtil.prop.getProperty("iswritenw"));
-            String nwFileName = AutoUtil.prop.getProperty("nwfile");
+            //ネットワーク環境の書き出し
             if(isWriteNW == 1) {
                     ISNetworkGraphLog.makeNetworkGraphLog(nwFileName);
+                    ISNetworkEnvLog.makeNetworkEnvLog(nwFileName, env);
             }
 
             CCNMgr.getIns().process();

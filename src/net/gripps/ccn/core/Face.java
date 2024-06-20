@@ -3,12 +3,13 @@ package net.gripps.ccn.core;
 import net.gripps.cloud.core.VCPU;
 import net.gripps.cloud.nfv.sfc.VNF;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
  * Created by kanemih on 2018/11/02.
  */
-public class Face {
+public class Face implements Serializable {
 
     /**
      * Face ID．

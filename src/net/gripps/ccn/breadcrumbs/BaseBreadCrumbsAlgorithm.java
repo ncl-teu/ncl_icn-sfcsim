@@ -6,7 +6,9 @@ import net.gripps.ccn.core.CCNRouter;
 import net.gripps.ccn.core.ForwardHistory;
 import net.gripps.ccn.core.InterestPacket;
 
-public abstract class BaseBreadCrumbsAlgorithm {
+import java.io.Serializable;
+
+public abstract class BaseBreadCrumbsAlgorithm implements Serializable {
 
     /*
      *  ルータからデータ転送時に呼ばれるメソッドで, BCを新規作成して残す処理です．
