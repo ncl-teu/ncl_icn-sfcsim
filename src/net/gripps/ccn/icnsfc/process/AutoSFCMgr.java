@@ -646,6 +646,10 @@ public class AutoSFCMgr implements Serializable {
         return val;
     }
 
+    public String[] splitPrefix(String prefix) {
+        return prefix.split("/");
+    }
+
 
 
     public double calcExecTime(long w, VCPU vcpu){
