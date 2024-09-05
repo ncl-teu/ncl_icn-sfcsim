@@ -651,6 +651,48 @@ public class AutoSFCMgr implements Serializable {
     }
 
 
+    /**
+     * AutoICNにおいてタスクを１つずつ割り当てる際に必要な，ReadyListを作成する処理
+     * ReadyList: 全ての後続タスクが割当済みのタスク群
+     * @param p
+     * @param bundledInterest
+     * @return
+     */
+    public LinkedList<Long> createReadyList(InterestPacket p, HashMap<Long, LinkedList<InterestPacket>> bundledInterest) {
+        LinkedList<Long> readyList = new LinkedList<>();
+
+        SFC sfc_int = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
+        HashMap<Long, VNF>  vnfMap = sfc_int.getVnfMap();
+
+        for(Map.Entry<Long, LinkedList<InterestPacket>> entry : bundledInterest.entrySet()) {
+             VNF vnf = vnfMap.get(entry.getKey());
+             LinkedList<DataDependence> dsucList = vnf.getDsucList();
+             int dsucNum = dsucList.size();
+             int currentDsucIntNum = entry.getValue().size();
+             if(currentDsucIntNum == dsucNum) {
+                 readyList.add(entry.getKey());
+             }
+        }
+        readyList = sortReadyList(p, readyList);
+        return readyList;
+    }
+
+    public LinkedList<Long> sortReadyList (InterestPacket p, LinkedList<Long> readyList) {
+        // ReadyListの中身を並び替える，適当にWorkloadで並び替えているがこれでいいのか
+        SFC sfc_int = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
+        HashMap<Long, VNF>  vnfMap = sfc_int.getVnfMap();
+        Comparator<Long> comparator = new Comparator<Long>() {
+            @Override
+            public int compare(Long readyTask1, Long readyTask2) {
+                VNF readyVNF1 = vnfMap.get(readyTask1);
+                VNF readyVNF2 = vnfMap.get(readyTask2);
+
+                return Long.valueOf(readyVNF1.getWorkLoad()).compareTo(Long.valueOf(readyVNF2.getWorkLoad()));
+            }
+        };
+        Collections.sort(readyList, comparator);
+        return readyList;
+    }
 
     public double calcExecTime(long w, VCPU vcpu){
         return CloudUtil.getRoundedValue((double) w / (double) vcpu.getMips());
