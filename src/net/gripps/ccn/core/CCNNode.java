@@ -357,7 +357,6 @@ public class CCNNode extends AbstractNode {
                         p.getAppParams().put("inOneStroke", true);
                         p.getAppParams().put("ReadyList", new LinkedList<String>());
                         p.getAppParams().put("BundledInterests", new HashMap<Long, LinkedList<InterestPacket>>());
-                        System.out.println("//StartInterestRequested:prefix: " + p.getPrefix());
                     }
 
                     long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
