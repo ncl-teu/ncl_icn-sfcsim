@@ -1,8 +1,5 @@
 package net.gripps.ccn.icnsfc.core;
 
-import net.gripps.cloud.core.VM;
-import net.gripps.cloud.nfv.sfc.VNF;
-
 import java.io.Serializable;
 import java.util.HashSet;
 
@@ -38,6 +35,26 @@ public class AutoInfo implements Serializable {
      * SFCにおける，SFの数
      */
     private long sfNum;
+
+    /**
+     * アプリケーションの実行開始時刻(つまり，StartTaskの実行開始時刻)
+     */
+    private long startAppExecTime;
+
+    /**
+     * アプリケーションの実行完了時刻(つまり，EndTaskの実行完了時刻)
+     */
+    private long finishAppExecTime;
+
+    /**
+     * アプリケーションの実行時間
+     */
+    private long appExecTime;
+
+    /**
+     * アプリケーションのトータルホップ数(Interestのホップ数の合計)
+     */
+    private int appHopNum;
 
 
 
@@ -132,6 +149,38 @@ public class AutoInfo implements Serializable {
 
     public void setSfNum(long sfNum) {
         this.sfNum = sfNum;
+    }
+
+    public long getStartAppExecTime() {
+        return startAppExecTime;
+    };
+
+    public void setStartAppExecTime(long startAppExecTime) {
+        this.startAppExecTime = startAppExecTime;
+    }
+
+    public long getFinishAppExecTime() {
+        return finishAppExecTime;
+    }
+
+    public void setFinishAppExecTime(long finishAppExecTime) {
+        this.finishAppExecTime = finishAppExecTime;
+    }
+
+    public void setAppExecTime(long appExecTime) {
+        this.appExecTime = appExecTime;
+    }
+
+    public long getAppExecTime() {
+        return appExecTime;
+    }
+
+    public int getAppHopNum() {
+        return appHopNum;
+    }
+
+    public void setAppHopNum(int totalHopNum) {
+        this.appHopNum = totalHopNum;
     }
 
 

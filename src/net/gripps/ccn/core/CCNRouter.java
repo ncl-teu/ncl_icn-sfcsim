@@ -707,6 +707,8 @@ public class CCNRouter extends AbstractNode {
         SFC sfc = this.sfcMap.get(vnf.getIDVector().get(0));
         //もしENDタスクなら，ここで終了．
         if(vnf.getDsucList().isEmpty()){
+            //ENDタスクの終了時刻を保存する
+            AutoSFCMgr.getIns().saveFinishAppExecTime(sfc);
             //pitからCCNNodeを取得する．
             //PIT全てに対して送る．
             String prefix = AutoSFCMgr.getIns().createEndPrefix(vnf);
@@ -969,6 +971,9 @@ public class CCNRouter extends AbstractNode {
         //もしCSにあれば，データを返す．
         //  if(!CCNMgr.getIns().isSFCMode()){
         if (this.CSEntry.getCacheMap().containsKey(p.getPrefix())) {
+            //ここにたどり着くまでのホップ数を保存
+            AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
+
             //Interest sending in one-stroke
             //暫定: 代表Interestがキャッシュヒットしたので，Bundled Interestの中からその代表Interestと同じタスクへの要求Interestを１つ選び，再度代表にする．
             //キャッシュヒットしたとしてもprefixが異なるため，むやみに放流するとFork-Not-Joinしてしまう可能性がある．
@@ -1002,6 +1007,7 @@ public class CCNRouter extends AbstractNode {
                     String newVCPUPrefix = auto.findNextRouter(reDestinationInterest, this);
                     //targetルータのIDを取得する．
                     CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
+
                     //履歴情報の更新
                     //新しい代表Interestに対して更新
                     reDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
@@ -1183,6 +1189,8 @@ public class CCNRouter extends AbstractNode {
                 //もし同一であれば，自分で実行する．かつ，SFCの当該タスクの割当先を自分に設定する．
                 if (this.getRouterID().equals(router.getRouterID())||(this.containsSameRouter(router.getRouterID(), p))) {
                     //System.out.println(sfc_int.getAplID() + ":Fixed  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID() + "From:"+toID);
+                    //ここにたどり着くまでのホップ数を保存
+                    AutoSFCMgr.getIns().saveAppHopNum(p, sfc_int);
                     Long predID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
                     VNF predVNF = sfc_int.findVNFByLastID(predID);
                     Long sucID = AutoSFCMgr.getIns().getSucVNFID(p.getPrefix());
@@ -1205,9 +1213,15 @@ public class CCNRouter extends AbstractNode {
                     ISLog.getIns().log(",Int.,0,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ duration + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
                     //Interest sending in one-stroke
-                    //タスクが割当されたので，同じタスクに対するBundled Interestは転送をやめる．(BundledInterestsから削除)
                     if(inOneStroke) {
                         if(!tmpBundledInterests.isEmpty()) {
+                            if(tmpBundledInterests.containsKey(predID)) {
+                                for(InterestPacket allocbint : tmpBundledInterests.get(predID)) {
+                                    //ここにたどり着くまでのホップ数を保存
+                                    AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
+                                }
+                            }
+                            //タスクが割当されたので，同じタスクに対するBundled Interestは転送をやめる．(BundledInterestsから削除)
                             tmpBundledInterests.remove(predID);
                         }
                     }
@@ -1223,6 +1237,7 @@ public class CCNRouter extends AbstractNode {
 //System.out.println(sfc_int.getAplID() + ":START  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
                         predVNF.setAplID(sfc.getAplID());
                         //処理をさせる．
+                        AutoSFCMgr.getIns().saveStartAppExecTime(sfc_int);
                         startVCPU.exec(predVNF);
                         VM vm = env.getGlobal_vmMap().get(startVCPU.getVMID());
                         //SFインスタンスの保存

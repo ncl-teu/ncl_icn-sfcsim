@@ -438,6 +438,47 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
+    public void saveStartAppExecTime(SFC sfc){
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+
+        String id = this.genAutoID(sfc);
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        info.setStartAppExecTime(startTime);
+
+    }
+
+    public void saveFinishAppExecTime(SFC sfc){
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        long finishTime = System.currentTimeMillis();
+
+        String id = this.genAutoID(sfc);
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        info.setFinishAppExecTime(finishTime);
+
+        long AppExecTiime = finishTime - info.getStartAppExecTime();
+        info.setAppExecTime(AppExecTiime);
+
+    }
+
+    public void saveAppHopNum(InterestPacket p, SFC sfc) {
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        int interestHopNum = p.getHistoryList().size();
+        String id = this.genAutoID(sfc);
+
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        int prevTotalhopNum = info.getAppHopNum();
+
+        info.setAppHopNum(prevTotalhopNum + interestHopNum);
+
+    }
+
 
 
 
@@ -485,7 +526,8 @@ public class AutoSFCMgr implements Serializable {
             BufferedWriter bw = new BufferedWriter(fw);
             PrintWriter pw = new PrintWriter(bw);
             if(this.globalCnt == 0){
-                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#");
+//                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#");
+                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop");
 
             }
 
@@ -518,6 +560,14 @@ public class AutoSFCMgr implements Serializable {
             buf.append(info.getvCPUSet().size() + ","+info.getCacheHitNum());
             this.resultInfo.getvCPUSet().addAll(info.getvCPUSet());
             totalHitNum += info.getCacheHitNum();
+
+            buf.append(info.getAppExecTime() +",");
+            this.resultInfo.setAppExecTime(this.resultInfo.getAppExecTime() + info.getAppExecTime());
+            buf.append(info.getAppHopNum());
+            this.resultInfo.setAppHopNum(this.resultInfo.getAppHopNum() + info.getAppHopNum());
+
+
+
             pw.println(buf.toString());
 
 
