@@ -1301,14 +1301,9 @@ public class CCNRouter extends AbstractNode {
                                     1500, this.getRouterID(), p.getCount()+1, newFList);
 
                             newInterest.getAppParams().put(AutoUtil.SFC_NAME, sfc_int);
-                            //this.getInterestQueue().add(newInterest);
-                            //転送先を決める．かならずルータになる．
-                            String newVCPUPrefix = auto.findNextRouter(newInterest, this);
-                            //targetルータのIDを取得する．
-                            CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
 
                             //Interest sending in one-stroke
-                            //生成された先行タスクへのInterestは，bundleしてからReadyListによって要求送信開始するかどうかを判断する．
+                            //生成された先行タスクへのInterestは，ここで送信開始せずに，一旦bundleしてからReadyListによって要求送信を開始するかどうかの判断をする．
                             if(inOneStroke) {
                                 if(tmpBundledInterests.containsKey(ppVNF.getIDVector().get(1))) {
                                     tmpBundledInterests.get(ppVNF.getIDVector().get(1)).add(newInterest);
@@ -1317,8 +1312,15 @@ public class CCNRouter extends AbstractNode {
                                     newBundledInt.add(newInterest);
                                     tmpBundledInterests.put(ppVNF.getIDVector().get(1), newBundledInt);
                                 }
+                                //上記の理由から，in one-strokeの時だけループ内のこの後の処理をスキップ．
                                 continue;
                             }
+
+                            //this.getInterestQueue().add(newInterest);
+                            //転送先を決める．かならずルータになる．
+                            String newVCPUPrefix = auto.findNextRouter(newInterest, this);
+                            //targetルータのIDを取得する．
+                            CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
 
                             //履歴情報の更新．
                             newHistory.setToID(nextRouter.getRouterID());
