@@ -1212,6 +1212,8 @@ public class CCNRouter extends AbstractNode {
                     }
                     ISLog.getIns().log(",Int.,0,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ duration + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
+                    //タスクごとの割り当てられた回数を記録
+                    AutoSFCMgr.getIns().saveSfExecNum(predID, sfc_int);
                     //Interest sending in one-stroke
                     if(inOneStroke) {
                         if(!tmpBundledInterests.isEmpty()) {

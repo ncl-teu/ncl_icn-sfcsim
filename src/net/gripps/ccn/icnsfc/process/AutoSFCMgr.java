@@ -1,7 +1,6 @@
 package net.gripps.ccn.icnsfc.process;
 
 import net.gripps.ccn.CCNUtil;
-import net.gripps.ccn.core.CCNRouter;
 import net.gripps.ccn.core.InterestPacket;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
@@ -18,9 +17,6 @@ import net.gripps.cloud.nfv.sfc.SFCGenerator;
 import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.clustering.tool.Calc;
-import net.named_data.jndn.Name;
-import org.ncl.workflow.ccn.sfc.process.NFDTask;
-import org.ncl.workflow.util.NCLWUtil;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -479,6 +475,29 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
+    public void saveSfExecNum(Long predId, SFC sfc) {
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        String id = this.genAutoID(sfc);
+
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        HashMap<Long, Integer> sfExecMap = info.getSfAllocNum();
+        if(sfExecMap == null){
+            sfExecMap = new HashMap<Long, Integer>();
+        }else {
+            if(sfExecMap.containsKey(predId)) {
+                Integer execNum = sfExecMap.get(predId) + 1;
+                sfExecMap.put(predId, execNum);
+            }else {
+                sfExecMap.put(predId, 1);
+            }
+        }
+
+        info.setSfAllocNum(sfExecMap);
+
+    }
+
 
 
 
@@ -527,7 +546,7 @@ public class AutoSFCMgr implements Serializable {
             PrintWriter pw = new PrintWriter(bw);
             if(this.globalCnt == 0){
 //                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#");
-                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop");
+                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop, SFAlloc#");
 
             }
 
@@ -561,10 +580,13 @@ public class AutoSFCMgr implements Serializable {
             this.resultInfo.getvCPUSet().addAll(info.getvCPUSet());
             totalHitNum += info.getCacheHitNum();
 
-            buf.append(info.getAppExecTime() +",");
+            buf.append(","+info.getAppExecTime() +",");
             this.resultInfo.setAppExecTime(this.resultInfo.getAppExecTime() + info.getAppExecTime());
             buf.append(info.getAppHopNum());
             this.resultInfo.setAppHopNum(this.resultInfo.getAppHopNum() + info.getAppHopNum());
+
+            buf.append(","+info.getSfAllocNum().values().stream().mapToInt(Integer::intValue).sum());
+            this.resultInfo.setSfAllocNum(info.getSfAllocNum());
 
 
 

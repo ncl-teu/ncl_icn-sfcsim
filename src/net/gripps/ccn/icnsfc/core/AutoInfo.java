@@ -1,6 +1,7 @@
 package net.gripps.ccn.icnsfc.core;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class AutoInfo implements Serializable {
@@ -55,6 +56,11 @@ public class AutoInfo implements Serializable {
      * アプリケーションのトータルホップ数(Interestのホップ数の合計)
      */
     private int appHopNum;
+
+    /**
+     * SFCにおける，各SFが実行された（割り当てられた）回数
+     */
+    private HashMap<Long, Integer> sfAllocNum;
 
 
 
@@ -181,6 +187,14 @@ public class AutoInfo implements Serializable {
 
     public void setAppHopNum(int totalHopNum) {
         this.appHopNum = totalHopNum;
+    }
+
+    public HashMap<Long, Integer> getSfAllocNum() {
+        return sfAllocNum;
+    }
+
+    public void setSfAllocNum(HashMap<Long, Integer> sfExecNum) {
+        this.sfAllocNum = sfExecNum;
     }
 
 
