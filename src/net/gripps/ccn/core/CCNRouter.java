@@ -1362,11 +1362,13 @@ public class CCNRouter extends AbstractNode {
                                 //新しい代表Interestに対して更新
                                 newDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
                                 newDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
-                                //BundledInterestsに対して更新
-                                for(Map.Entry<Long, LinkedList<InterestPacket>> bundledIntEntry : tmpBundledInterests.entrySet()) {
-                                    for(InterestPacket bundledInt : bundledIntEntry.getValue()) {
-                                        bundledInt.getHistoryList().getLast().setToID(nextRouter.getRouterID());
-                                        bundledInt.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
+                                //新しい代表Interest以外にも，ReadyListから選択されているタスクへのものについてはBundledInterestの中から取り出して更新する．
+                                if(tmpBundledInterests.containsKey(newDestinationTask)) {
+                                    Iterator<InterestPacket> destBundledIntIte = tmpBundledInterests.get(newDestinationTask).iterator();
+                                    while(destBundledIntIte.hasNext()) {
+                                        InterestPacket destBundledInt = destBundledIntIte.next();
+                                        destBundledInt.getHistoryList().getLast().setToID(nextRouter.getRouterID());
+                                        destBundledInt.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
                                     }
                                 }
                                 //代表となるInterestにReadyListとBundledInterestsを加える
