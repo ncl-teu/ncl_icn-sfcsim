@@ -143,27 +143,28 @@ public class CCNNode extends AbstractNode {
                         this.state = CCNUtil.STATE_NODE_DATA_REQUESTED;
                         InterestPacket p = this.interestQueue.poll();
                         //Interest sending in one-stroke
-                        //Interest sendingのモードを取得し，inOneStrokeならBundled-Interestを取り出しておく. CCNNodeには来ないかも
+                        //Interest sendingのモードを取得し，inOneStrokeならBundled-Interestを取り出しておく. 通常CCNNodeには来ないはず．
                         boolean inOneStroke = false;
-                        LinkedList<InterestPacket> tmpInterestsList = new LinkedList<>();
+                        HashMap<Long, LinkedList<InterestPacket>> tmpBundledInterests = new HashMap<Long, LinkedList<InterestPacket>>();
                         if(p.getAppParams().containsKey("inOneStroke")){
                             inOneStroke = (boolean) (p.getAppParams().get("inOneStroke"));
                         }
                         if(inOneStroke){
-                            HashMap<Long, LinkedList<InterestPacket>> extBundledInterest = (HashMap<Long, LinkedList<InterestPacket>>)p.getAppParams().get("BundledInterests");
-                            if(extBundledInterest != null && !extBundledInterest.isEmpty()){
-                                for(LinkedList<InterestPacket> interests : extBundledInterest.values()){
-                                    tmpInterestsList.addAll(interests);
-                                }
-                            }
+                            tmpBundledInterests = (HashMap<Long, LinkedList<InterestPacket>>)p.getAppParams().get("BundledInterests");
                         }
 
                         this.processDataReturn(p);
 
                         //Interest sending in one-stroke
                         //オリジナルコンテンツを保有するCCNNodeであるため，Bundled-Interestsに対してもそのまま処理を行う．
-                        for(InterestPacket bundledInt : tmpInterestsList) {
-                            this.processDataReturn(bundledInt);
+                        if(tmpBundledInterests != null && !tmpBundledInterests.isEmpty()){
+                            Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                            while(tmpBundledIntIte.hasNext()){
+                                Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
+                                while(bundledIntIte.hasNext()){
+                                    this.processDataReturn(bundledIntIte.next());
+                                }
+                            }
                         }
 
                     }else{
@@ -352,7 +353,7 @@ public class CCNNode extends AbstractNode {
                     //Interest sending in one-stroke
                     //Interest sendigのモードを取得
                     int interests_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
-                    //isOneStrokeフラグを立てる, ReadyListやBundledInterestはEND Taskなので空だが用意しておく
+                    //isOneStrokeフラグを立てる．ReadyListやBundledInterestはEND Taskのため空になるが，用意しておく．
                     if(interests_sending_mode==1) {
                         p.getAppParams().put("inOneStroke", true);
                         p.getAppParams().put("ReadyList", new LinkedList<String>());

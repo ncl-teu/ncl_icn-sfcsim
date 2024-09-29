@@ -939,8 +939,8 @@ public class CCNRouter extends AbstractNode {
         //Interest sending in one-stroke
         //Interest sendingのモードを取得，初期化
         boolean inOneStroke = false;
-        HashMap<Long, LinkedList<InterestPacket>> tmpBundledInterests = new HashMap<>();
-        LinkedList<Long> tmpReadyList = new LinkedList<>();
+        HashMap<Long, LinkedList<InterestPacket>> tmpBundledInterests = new HashMap<Long, LinkedList<InterestPacket>>();
+        LinkedList<Long> tmpReadyList = new LinkedList<Long>();
         if(p.getAppParams().containsKey("inOneStroke")){
             inOneStroke = (boolean) p.getAppParams().get("inOneStroke");
         }
@@ -952,9 +952,10 @@ public class CCNRouter extends AbstractNode {
 
             //Bundled Interestsに対しても到着時刻を設定
             if(!tmpBundledInterests.isEmpty()) {
-                for(Map.Entry<Long, LinkedList<InterestPacket>> entry : tmpBundledInterests.entrySet()){
-                    Iterator<InterestPacket> bundledItIte = entry.getValue().iterator();
-                    while(bundledItIte.hasNext()){
+                Iterator<LinkedList<InterestPacket>> tmpBundledInterestIte = tmpBundledInterests.values().iterator();
+                while(tmpBundledInterestIte.hasNext()) {
+                    Iterator<InterestPacket> bundledItIte = tmpBundledInterestIte.next().iterator();
+                    while(bundledItIte.hasNext()) {
                         InterestPacket bundledp = bundledItIte.next();
                         ForwardHistory bundledh = bundledp.getHistoryList().getLast();
                         SFC bundledsfc = (SFC)bundledp.getAppParams().get(AutoUtil.SFC_NAME);
@@ -962,7 +963,7 @@ public class CCNRouter extends AbstractNode {
                             AutoSFCMgr.getIns().saveStartTime(bundledp, bundledsfc);
                         }
                         bundledh.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
-                        p.setCount(p.getCount() + 1);
+                        bundledp.setCount(bundledp.getCount() + 1);
                     }
                 }
             }
@@ -975,9 +976,9 @@ public class CCNRouter extends AbstractNode {
             AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
 
             //Interest sending in one-stroke
-            //暫定: 代表Interestがキャッシュヒットしたので，Bundled Interestの中からその代表Interestと同じタスクへの要求Interestを１つ選び，再度代表にする．
-            //キャッシュヒットしたとしてもprefixが異なるため，むやみに放流するとFork-Not-Joinしてしまう可能性がある．
-            //キャッシュヒットと関係ないBundled Interestは変わらず転送を続けなければならない．
+            //暫定: 代表Interestがキャッシュヒットした場合，BundledInterestsの中からその代表Interestと同じタスクへ要求しているInterestを１つ選び，再度代表にする．
+            //キャッシュヒットしたとしても，prefixが異なるために，同じように他のタスクへデータを返送することはできない．
+            //またBundledInterestsをむやみに放流すると再度Fork-Not-Joinしてしまう可能性があるため，再度束ね直した上で転送を続けなければならない．
             if(inOneStroke) {
                 InterestPacket reDestinationInterest = null;
                 Long cacheHittedVNFID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
@@ -1012,13 +1013,7 @@ public class CCNRouter extends AbstractNode {
                     //新しい代表Interestに対して更新
                     reDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
                     reDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
-                    //BundledInterestsに対して更新
-                    for(Map.Entry<Long, LinkedList<InterestPacket>> bundledIntEntry : tmpBundledInterests.entrySet()) {
-                        for(InterestPacket bundledInt : bundledIntEntry.getValue()) {
-                            bundledInt.getHistoryList().getLast().setToID(nextRouter.getRouterID());
-                            bundledInt.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
-                        }
-                    }
+                    //BundledInterestsに対しては更新しない．
                     //代表となるInterestにReadyListとBundledInterestsを加える
                     reDestinationInterest.getAppParams().put("inOneStroke", true);
                     reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
@@ -1147,8 +1142,9 @@ public class CCNRouter extends AbstractNode {
             //BundledされているInterest全てについてもPITに反映する
             if(inOneStroke) {
                 if(!tmpBundledInterests.isEmpty()) {
-                    for(Map.Entry<Long, LinkedList<InterestPacket>> bundledIntEntry : tmpBundledInterests.entrySet()) {
-                        Iterator<InterestPacket> bundledIntIte = bundledIntEntry.getValue().iterator();
+                    Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                    while(tmpBundledIntIte.hasNext()) {
+                        Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
                         while(bundledIntIte.hasNext()) {
                             InterestPacket bint = bundledIntIte.next();
                             this.addFacetoPit(bint, bint.getHistoryList().getLast().getFromID(), bint.getHistoryList().getLast().getFromType());
@@ -1218,7 +1214,9 @@ public class CCNRouter extends AbstractNode {
                     if(inOneStroke) {
                         if(!tmpBundledInterests.isEmpty()) {
                             if(tmpBundledInterests.containsKey(predID)) {
-                                for(InterestPacket allocbint : tmpBundledInterests.get(predID)) {
+                                Iterator<InterestPacket> allocTmpBundledIntIte = tmpBundledInterests.get(predID).iterator();
+                                while(allocTmpBundledIntIte.hasNext()) {
+                                    InterestPacket allocbint = allocTmpBundledIntIte.next();
                                     //ここにたどり着くまでのホップ数を保存
                                     AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
                                 }
@@ -1404,8 +1402,11 @@ public class CCNRouter extends AbstractNode {
                     //Interest sending in one-stroke
                     if(inOneStroke) {
                         if(!tmpBundledInterests.isEmpty()) {
-                            for(Map.Entry<Long, LinkedList<InterestPacket>> bundledIntEntry : tmpBundledInterests.entrySet()) {
-                                for(InterestPacket bint : bundledIntEntry.getValue()) {
+                            Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                            while(tmpBundledIntIte.hasNext()) {
+                                Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
+                                while(bundledIntIte.hasNext()) {
+                                    InterestPacket bint = bundledIntIte.next();
                                     //BundledされているInterest全てについてもhistoryを加える
                                     bint.getHistoryList().add(newHistory);
                                     //BundledされているInterest全てについてもPITに反映する
