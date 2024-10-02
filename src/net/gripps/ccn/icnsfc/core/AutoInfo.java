@@ -38,6 +38,17 @@ public class AutoInfo implements Serializable {
     private long sfNum;
 
     /**
+     * アプリケーションが要求された時刻(CCNNodeが要求した時刻)
+     */
+    private long startAppRequestTime;
+
+    /**
+     * アプリケーションのTurnaround Time
+     */
+    private long turnaroundTime;
+
+
+    /**
      * アプリケーションの実行開始時刻(つまり，StartTaskの実行開始時刻)
      */
     private long startAppExecTime;
@@ -155,6 +166,23 @@ public class AutoInfo implements Serializable {
 
     public void setSfNum(long sfNum) {
         this.sfNum = sfNum;
+    }
+
+
+    public long getStartAppRequestTime() {
+        return startAppRequestTime;
+    }
+
+    public void setStartAppRequestTime(long startAppRequestTime) {
+        this.startAppRequestTime = startAppRequestTime;
+    }
+
+    public long getTurnaroundTime() {
+        return turnaroundTime;
+    }
+
+    public void setTurnaroundTime(long turnaroundTime) {
+        this.turnaroundTime = turnaroundTime;
     }
 
     public long getStartAppExecTime() {

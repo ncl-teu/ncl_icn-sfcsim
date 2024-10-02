@@ -1,10 +1,12 @@
 package net.gripps.ccn.icnsfc.process;
 
 import net.gripps.ccn.CCNUtil;
+import net.gripps.ccn.core.CCNRouter;
 import net.gripps.ccn.core.InterestPacket;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
 import net.gripps.ccn.icnsfc.core.AutoInfo;
+import net.gripps.ccn.icnsfc.routing.AutoRouting;
 import net.gripps.ccn.process.CCNMgr;
 import net.gripps.cloud.CloudUtil;
 import net.gripps.cloud.core.Cloud;
@@ -434,6 +436,38 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
+
+    public void saveStartRequestingTime(InterestPacket p, SFC sfc){
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        if(p.getHistoryList().size() == 1){
+            //初期状態
+            long startTime = System.currentTimeMillis();
+            String id = this.genAutoID(sfc);
+
+            AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+            info.setStartAppRequestTime(startTime);
+        }else{
+            return;
+        }
+    }
+
+    public void saveTurnaroundTime(Long aplID, Long sfcID) {
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        long finishTime = System.currentTimeMillis();
+
+
+        String id = this.genAutoID(aplID, sfcID);
+
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        long turnaroundTime = finishTime - info.getStartAppRequestTime();
+        info.setTurnaroundTime(turnaroundTime);
+
+    }
+
     public void saveStartAppExecTime(SFC sfc){
         if(!CCNMgr.getIns().isSFCMode()){
             return;
@@ -546,7 +580,7 @@ public class AutoSFCMgr implements Serializable {
             PrintWriter pw = new PrintWriter(bw);
             if(this.globalCnt == 0){
 //                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#");
-                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop, SFAlloc#");
+                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop, SFAlloc#, TurnaroundTime");
 
             }
 
@@ -587,6 +621,9 @@ public class AutoSFCMgr implements Serializable {
 
             buf.append(","+info.getSfAllocNum().values().stream().mapToInt(Integer::intValue).sum());
             this.resultInfo.setSfAllocNum(info.getSfAllocNum());
+
+            buf.append(","+info.getTurnaroundTime());
+            this.resultInfo.setTurnaroundTime(this.resultInfo.getTurnaroundTime());
 
 
 
@@ -745,24 +782,46 @@ public class AutoSFCMgr implements Serializable {
                  readyList.add(entry.getKey());
              }
         }
-        readyList = sortReadyList(p, readyList);
         return readyList;
     }
 
-    public LinkedList<Long> sortReadyList (InterestPacket p, LinkedList<Long> readyList) {
-        // ReadyListの中身を並び替える，適当にWorkloadで並び替えているがこれでいいのか
-        SFC sfc_int = (SFC)p.getAppParams().get(AutoUtil.SFC_NAME);
-        HashMap<Long, VNF>  vnfMap = sfc_int.getVnfMap();
+    /**
+     * AutoICNにおいて，後続タスクの割当状況から作成したReadyListを，並び替える処理
+     * そのルータのvCPUに基づいたBlevelによって並び替える
+     * @param readyList
+     * @param router
+     * @param sfc
+     * @return
+     */
+    public LinkedList<Long> sortReadyList(LinkedList<Long> readyList, CCNRouter router,SFC sfc) {
+        HashMap<Long, VNF> vnfMap = sfc.getVnfMap();
+
         Comparator<Long> comparator = new Comparator<Long>() {
             @Override
             public int compare(Long readyTask1, Long readyTask2) {
+                AutoRouting auto = (AutoRouting) router.getUsedRouting();
                 VNF readyVNF1 = vnfMap.get(readyTask1);
                 VNF readyVNF2 = vnfMap.get(readyTask2);
 
-                return Long.valueOf(readyVNF1.getWorkLoad()).compareTo(Long.valueOf(readyVNF2.getWorkLoad()));
+                Iterator<VCPU> routerVCpuIte = router.getvCPUMap().values().iterator();
+                double readyVNF1WSTBlv = 0;
+                double readyVNF2WSTBlv = 0;
+                while(routerVCpuIte.hasNext()) {
+                    VCPU routerVCPU = routerVCpuIte.next();
+                    double VNF1Blv = auto.calcBlevelWST(readyVNF1, routerVCPU, sfc);
+                    double VNF2Blv = auto.calcBlevelWST(readyVNF2, routerVCPU, sfc);
+                    if(VNF1Blv > readyVNF1WSTBlv) {
+                        readyVNF1WSTBlv = VNF1Blv;
+                    }
+                    if(VNF2Blv > readyVNF2WSTBlv) {
+                        readyVNF2WSTBlv = VNF2Blv;
+                    }
+                }
+                return Double.valueOf(readyVNF2WSTBlv).compareTo(Double.valueOf(readyVNF1WSTBlv));
             }
         };
-        Collections.sort(readyList, comparator);
+        readyList.sort(comparator);
+
         return readyList;
     }
 

@@ -991,6 +991,7 @@ public class CCNRouter extends AbstractNode {
                     //ReadyListが空であれば作成してから，１つ取り出す．
                     if(tmpReadyList.isEmpty()) {
                         tmpReadyList = AutoSFCMgr.getIns().createReadyList(p, tmpBundledInterests);
+                        AutoSFCMgr.getIns().sortReadyList(tmpReadyList, this, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
                     }
                     Long newDestinationTask = tmpReadyList.poll();
                     //新たな代表Interestを作成
@@ -1340,6 +1341,7 @@ public class CCNRouter extends AbstractNode {
                             //ReadyListが空であれば作成してから，１つ取り出す．
                             if(tmpReadyList.isEmpty()) {
                                 tmpReadyList = AutoSFCMgr.getIns().createReadyList(p, tmpBundledInterests);
+                                AutoSFCMgr.getIns().sortReadyList(tmpReadyList, this, sfc_int);
                             }
                             newDestinationTask = tmpReadyList.poll();
 
