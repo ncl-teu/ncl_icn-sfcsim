@@ -447,10 +447,34 @@ public class AutoSFCMgr implements Serializable {
             String id = this.genAutoID(sfc);
 
             AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
-            info.setStartAppRequestTime(startTime);
+            info.setStartRequestingTime(startTime);
         }else{
             return;
         }
+    }
+
+    public void saveStartExecutionTime(SFC sfc){
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+
+        String id = this.genAutoID(sfc);
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
+        info.setStartExecutionTime(startTime);
+        // ここでrequesting timeも設定してしまう
+        this.saveRequestingTime(id);
+
+    }
+
+    public void saveRequestingTime(String infoID) {
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+
+        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(infoID);
+        info.setRequestingTime(info.getStartExecutionTime() - info.getStartRequestingTime());
+
     }
 
     public void saveTurnaroundTime(Long aplID, Long sfcID) {
@@ -463,35 +487,11 @@ public class AutoSFCMgr implements Serializable {
         String id = this.genAutoID(aplID, sfcID);
 
         AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
-        long turnaroundTime = finishTime - info.getStartAppRequestTime();
-        info.setTurnaroundTime(turnaroundTime);
-
-    }
-
-    public void saveStartAppExecTime(SFC sfc){
-        if(!CCNMgr.getIns().isSFCMode()){
-            return;
-        }
-        long startTime = System.currentTimeMillis();
-
-        String id = this.genAutoID(sfc);
-        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
-        info.setStartAppExecTime(startTime);
-
-    }
-
-    public void saveFinishAppExecTime(SFC sfc){
-        if(!CCNMgr.getIns().isSFCMode()){
-            return;
-        }
-        long finishTime = System.currentTimeMillis();
-
-        String id = this.genAutoID(sfc);
-        AutoInfo info = AutoSFCMgr.getIns().getAutoInfo(id);
-        info.setFinishAppExecTime(finishTime);
-
-        long AppExecTiime = finishTime - info.getStartAppExecTime();
-        info.setAppExecTime(AppExecTiime);
+        info.setTurnaroundTime(finishTime - info.getStartRequestingTime());
+        // ここで実行完了時刻も設定してしまう
+        info.setFinishExecutionTime(finishTime);
+        //　ここでexecuting timeも設定してしまう
+        info.setExecutingTime(finishTime - info.getStartExecutionTime());
 
     }
 
@@ -580,7 +580,7 @@ public class AutoSFCMgr implements Serializable {
             PrintWriter pw = new PrintWriter(bw);
             if(this.globalCnt == 0){
 //                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#");
-                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplExecTime, AplTotalHop, SFAlloc#, TurnaroundTime");
+                pw.println("0:Each/1:Total,Site#, Host#, VM#, vCPU#, MaxMips, MinMips, MaxBW, MinBW,Apl#, SFC#, CCR, SF#, SFIns#, MakeSpan,Host#, VM#, vCPU#, CacheHit#, AplTotalHop, SFAlloc#, RequestingTime, ExecutingTime, TurnaroundTime");
 
             }
 
@@ -614,13 +614,17 @@ public class AutoSFCMgr implements Serializable {
             this.resultInfo.getvCPUSet().addAll(info.getvCPUSet());
             totalHitNum += info.getCacheHitNum();
 
-            buf.append(","+info.getAppExecTime() +",");
-            this.resultInfo.setAppExecTime(this.resultInfo.getAppExecTime() + info.getAppExecTime());
-            buf.append(info.getAppHopNum());
+            buf.append(","+info.getAppHopNum());
             this.resultInfo.setAppHopNum(this.resultInfo.getAppHopNum() + info.getAppHopNum());
 
             buf.append(","+info.getSfAllocNum().values().stream().mapToInt(Integer::intValue).sum());
             this.resultInfo.setSfAllocNum(info.getSfAllocNum());
+
+            buf.append(","+info.getRequestingTime());
+            this.resultInfo.setRequestingTime(this.resultInfo.getRequestingTime() + info.getRequestingTime());
+
+            buf.append(","+info.getExecutingTime());
+            this.resultInfo.setExecutingTime(this.resultInfo.getExecutingTime());
 
             buf.append(","+info.getTurnaroundTime());
             this.resultInfo.setTurnaroundTime(this.resultInfo.getTurnaroundTime());

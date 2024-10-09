@@ -707,8 +707,6 @@ public class CCNRouter extends AbstractNode {
         SFC sfc = this.sfcMap.get(vnf.getIDVector().get(0));
         //もしENDタスクなら，ここで終了．
         if(vnf.getDsucList().isEmpty()){
-            //ENDタスクの終了時刻を保存する
-            AutoSFCMgr.getIns().saveFinishAppExecTime(sfc);
             //pitからCCNNodeを取得する．
             //PIT全てに対して送る．
             String prefix = AutoSFCMgr.getIns().createEndPrefix(vnf);
@@ -1238,7 +1236,7 @@ public class CCNRouter extends AbstractNode {
 //System.out.println(sfc_int.getAplID() + ":START  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
                         predVNF.setAplID(sfc.getAplID());
                         //処理をさせる．
-                        AutoSFCMgr.getIns().saveStartAppExecTime(sfc_int);
+                        AutoSFCMgr.getIns().saveStartExecutionTime(sfc_int);
                         startVCPU.exec(predVNF);
                         VM vm = env.getGlobal_vmMap().get(startVCPU.getVMID());
                         //SFインスタンスの保存

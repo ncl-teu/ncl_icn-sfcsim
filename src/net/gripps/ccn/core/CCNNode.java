@@ -350,7 +350,6 @@ public class CCNNode extends AbstractNode {
 
                     InterestPacket p  = genInterestPacket(destID, packet);
 
-                    AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
 
                     //Interest sending in one-stroke
                     //Interest sendigのモードを取得
@@ -366,6 +365,7 @@ public class CCNNode extends AbstractNode {
 
                     p.setMinBW(minBW);
                     long startTime = System.currentTimeMillis();
+                    AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
                     r.sendInterest(p);
                 }
 

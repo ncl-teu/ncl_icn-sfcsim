@@ -40,28 +40,31 @@ public class AutoInfo implements Serializable {
     /**
      * アプリケーションが要求された時刻(CCNNodeが要求した時刻)
      */
-    private long startAppRequestTime;
+    private long startRequestingTime;
 
+    /**
+     * アプリケーションのStartTaskの実行開始時刻
+     */
+    private long startExecutionTime;
+
+    /**
+     * アプリケーションのEndTaskの実行完了時刻
+     */
+    private long finishExecutionTime;
+
+    /**
+     * アプリケーションのInterestパケット転送に使った時間
+     */
+    private long requestingTime;
+
+    /**
+     * アプリケーションのタスク実行とDataパケット返送に使った時間
+     */
+    private long executingTime;
     /**
      * アプリケーションのTurnaround Time
      */
     private long turnaroundTime;
-
-
-    /**
-     * アプリケーションの実行開始時刻(つまり，StartTaskの実行開始時刻)
-     */
-    private long startAppExecTime;
-
-    /**
-     * アプリケーションの実行完了時刻(つまり，EndTaskの実行完了時刻)
-     */
-    private long finishAppExecTime;
-
-    /**
-     * アプリケーションの実行時間
-     */
-    private long appExecTime;
 
     /**
      * アプリケーションのトータルホップ数(Interestのホップ数の合計)
@@ -169,12 +172,44 @@ public class AutoInfo implements Serializable {
     }
 
 
-    public long getStartAppRequestTime() {
-        return startAppRequestTime;
+    public long getStartRequestingTime() {
+        return startRequestingTime;
     }
 
-    public void setStartAppRequestTime(long startAppRequestTime) {
-        this.startAppRequestTime = startAppRequestTime;
+    public void setStartRequestingTime(long startRequestingTime) {
+        this.startRequestingTime = startRequestingTime;
+    }
+
+    public long getStartExecutionTime() {
+        return startExecutionTime;
+    };
+
+    public void setStartExecutionTime(long startExecutionTime) {
+        this.startExecutionTime = startExecutionTime;
+    }
+
+    public void setFinishExecutionTime(long finishExecutionTime) {
+        this.finishExecutionTime = finishExecutionTime;
+    }
+
+    public long getFinishExecutionTime() {
+        return finishExecutionTime;
+    }
+
+    public long getRequestingTime() {
+        return this.requestingTime;
+    }
+
+    public void setRequestingTime(long requestingTime) {
+        this.requestingTime = requestingTime;
+    }
+
+    public void setExecutingTime(long executingTime) {
+        this.executingTime = executingTime;
+    }
+
+    public long getExecutingTime() {
+        return executingTime;
     }
 
     public long getTurnaroundTime() {
@@ -183,30 +218,6 @@ public class AutoInfo implements Serializable {
 
     public void setTurnaroundTime(long turnaroundTime) {
         this.turnaroundTime = turnaroundTime;
-    }
-
-    public long getStartAppExecTime() {
-        return startAppExecTime;
-    };
-
-    public void setStartAppExecTime(long startAppExecTime) {
-        this.startAppExecTime = startAppExecTime;
-    }
-
-    public long getFinishAppExecTime() {
-        return finishAppExecTime;
-    }
-
-    public void setFinishAppExecTime(long finishAppExecTime) {
-        this.finishAppExecTime = finishAppExecTime;
-    }
-
-    public void setAppExecTime(long appExecTime) {
-        this.appExecTime = appExecTime;
-    }
-
-    public long getAppExecTime() {
-        return appExecTime;
     }
 
     public int getAppHopNum() {
