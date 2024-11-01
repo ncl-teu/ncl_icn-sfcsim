@@ -25,6 +25,7 @@ import net.gripps.cloud.nfv.sfc.VNF;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.util.CopyUtil;
+import net.named_data.jndn.Interest;
 import org.ncl.workflow.util.NCLWUtil;
 
 import java.util.*;
@@ -933,10 +934,92 @@ public class CCNRouter extends AbstractNode {
 
         ////////FNJ問題END ///////////////
 
+        //Interest sending in one-stroke
+        //Interest sendingのモードを取得，初期化
+        boolean inOneStroke = false;
+        HashMap<Long, LinkedList<InterestPacket>> tmpBundledInterests = new HashMap<Long, LinkedList<InterestPacket>>();
+        LinkedList<Long> tmpReadyList = new LinkedList<Long>();
+        if(p.getAppParams().containsKey("inOneStroke")){
+            inOneStroke = (boolean) p.getAppParams().get("inOneStroke");
+        }
+        if(inOneStroke) {
+            tmpBundledInterests = (HashMap<Long, LinkedList<InterestPacket>>) p.getAppParams().get("BundledInterests");
+            tmpBundledInterests = Objects.isNull(tmpBundledInterests) ? new HashMap<Long, LinkedList<InterestPacket>>() : tmpBundledInterests;
+            tmpReadyList = (LinkedList<Long>) p.getAppParams().get("ReadyList");
+            tmpReadyList = Objects.isNull(tmpReadyList) ? new LinkedList<Long>() : tmpReadyList;
+
+            //Bundled Interestsに対しても到着時刻を設定
+            if(!tmpBundledInterests.isEmpty()) {
+                Iterator<LinkedList<InterestPacket>> tmpBundledInterestIte = tmpBundledInterests.values().iterator();
+                while(tmpBundledInterestIte.hasNext()) {
+                    Iterator<InterestPacket> bundledItIte = tmpBundledInterestIte.next().iterator();
+                    while(bundledItIte.hasNext()) {
+                        InterestPacket bundledp = bundledItIte.next();
+                        ForwardHistory bundledh = bundledp.getHistoryList().getLast();
+                        SFC bundledsfc = (SFC)bundledp.getAppParams().get(AutoUtil.SFC_NAME);
+                        if(sfc != null){
+                            AutoSFCMgr.getIns().saveStartTime(bundledp, bundledsfc);
+                        }
+                        bundledh.setArrivalTime(System.currentTimeMillis() + this.ccn_hop_per_delay);
+                        bundledp.setCount(bundledp.getCount() + 1);
+                    }
+                }
+            }
+        }
+
         //もしCSにあれば，データを返す．
         //  if(!CCNMgr.getIns().isSFCMode()){
         if (this.CSEntry.getCacheMap().containsKey(p.getPrefix())) {
-            //System.out.println( ":CacheHit  VCPU for "+p.getPrefix()+"@"+this.getRouterID());
+            //ここにたどり着くまでのホップ数を保存
+            AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
+
+            //Interest sending in one-stroke
+            //暫定: 代表Interestがキャッシュヒットした場合，BundledInterestsの中からその代表Interestと同じタスクへ要求しているInterestを１つ選び，再度代表にする．
+            //キャッシュヒットしたとしても，prefixが異なるために，同じように他のタスクへデータを返送することはできない．
+            //またBundledInterestsをむやみに放流すると再度Fork-Not-Joinしてしまう可能性があるため，再度束ね直した上で転送を続けなければならない．
+            if(inOneStroke) {
+                InterestPacket reDestinationInterest = null;
+                Long cacheHittedVNFID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
+                if(tmpBundledInterests.containsKey(cacheHittedVNFID)) {
+                    //キャッシュヒットしたタスクと同じタスクに対して要求しているBundledInterestがあった場合
+                    //新たな代表Interestを作成
+                    reDestinationInterest = tmpBundledInterests.get(cacheHittedVNFID).poll();
+                }else{
+                    //キャッシュヒットしたタスクと同じタスクに対して要求しているBundledInterestがなかった場合
+                    //ReadyListが空であれば作成してから，１つ取り出す．
+                    if(tmpReadyList.isEmpty()) {
+                        tmpReadyList = AutoSFCMgr.getIns().createReadyList(p, tmpBundledInterests);
+                        AutoSFCMgr.getIns().sortReadyList(tmpReadyList, this, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
+                    }
+                    Long newDestinationTask = tmpReadyList.poll();
+                    //新たな代表Interestを作成
+                    if(tmpBundledInterests.containsKey(newDestinationTask)) {
+                        reDestinationInterest = tmpBundledInterests.get(newDestinationTask).poll();
+                    }else {
+                        //ERROR: New destination task is not found in BundledInterests
+                    }
+                }
+
+                if(reDestinationInterest != null) {
+                    //転送先を決める．
+                    //転送先を決める．かならずルータになる?
+                    AutoRouting auto = (AutoRouting) this.usedRouting;
+                    String newVCPUPrefix = auto.findNextRouter(reDestinationInterest, this);
+                    //targetルータのIDを取得する．
+                    CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
+
+                    //履歴情報の更新
+                    //新しい代表Interestに対して更新
+                    reDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
+                    reDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
+                    //BundledInterestsに対しては更新しない．
+                    //代表となるInterestにReadyListとBundledInterestsを加える
+                    reDestinationInterest.getAppParams().put("inOneStroke", true);
+                    reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
+                    reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
+                    nextRouter.getInterestQueue().add(reDestinationInterest);
+                }
+            }
 
             CCNContents c_org = this.CSEntry.getCacheMap().get(p.getPrefix());
             CCNContents c = (CCNContents)c_org.deepCopy();
@@ -1054,6 +1137,21 @@ public class CCNRouter extends AbstractNode {
             boolean isNotFound = false;
             //PITへの反映
             this.addFacetoPit(p, toID, toType);
+            //Interest sending in one-stroke
+            //BundledされているInterest全てについてもPITに反映する
+            if(inOneStroke) {
+                if(!tmpBundledInterests.isEmpty()) {
+                    Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                    while(tmpBundledIntIte.hasNext()) {
+                        Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
+                        while(bundledIntIte.hasNext()) {
+                            InterestPacket bint = bundledIntIte.next();
+                            this.addFacetoPit(bint, bint.getHistoryList().getLast().getFromID(), bint.getHistoryList().getLast().getFromType());
+                        }
+                    }
+                }
+            }
+
             //System.out.println("PIT ADD:"+p.getPrefix());
             //SFCモードであれば，別の処理を行う．
             if (CCNMgr.getIns().isSFCMode()) {
@@ -1086,6 +1184,8 @@ public class CCNRouter extends AbstractNode {
                 //もし同一であれば，自分で実行する．かつ，SFCの当該タスクの割当先を自分に設定する．
                 if (this.getRouterID().equals(router.getRouterID())||(this.containsSameRouter(router.getRouterID(), p))) {
                     //System.out.println(sfc_int.getAplID() + ":Fixed  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID() + "From:"+toID);
+                    //ここにたどり着くまでのホップ数を保存
+                    AutoSFCMgr.getIns().saveAppHopNum(p, sfc_int);
                     Long predID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
                     VNF predVNF = sfc_int.findVNFByLastID(predID);
                     Long sucID = AutoSFCMgr.getIns().getSucVNFID(p.getPrefix());
@@ -1107,6 +1207,23 @@ public class CCNRouter extends AbstractNode {
                     }
                     ISLog.getIns().log(",Int.,0,"+sfc_int.getAplID() + ","+sfc_int.getSfcID()+","+p.getPrefix()+","+predID+"@R"+this.getRouterID()+","+sucID +",<-" + cap + fList.getLast().getFromID() + ","+
                             p.getHistoryList().size() +","+ duration + ","+CloudUtil.getInstance().getHostPrefix(vCPUID) + ","+ this.getVMID() + ","+vCPUID+","+current);
+                    //タスクごとの割り当てられた回数を記録
+                    AutoSFCMgr.getIns().saveSfExecNum(predID, sfc_int);
+                    //Interest sending in one-stroke
+                    if(inOneStroke) {
+                        if(!tmpBundledInterests.isEmpty()) {
+                            if(tmpBundledInterests.containsKey(predID)) {
+                                Iterator<InterestPacket> allocTmpBundledIntIte = tmpBundledInterests.get(predID).iterator();
+                                while(allocTmpBundledIntIte.hasNext()) {
+                                    InterestPacket allocbint = allocTmpBundledIntIte.next();
+                                    //ここにたどり着くまでのホップ数を保存
+                                    AutoSFCMgr.getIns().saveAppHopNum(p, (SFC)p.getAppParams().get(AutoUtil.SFC_NAME));
+                                }
+                            }
+                            //タスクが割当されたので，同じタスクに対するBundled Interestは転送をやめる．(BundledInterestsから削除)
+                            tmpBundledInterests.remove(predID);
+                        }
+                    }
                     //FIBに登録する．
                     //this.getFIBEntry().addFace(p.getPrefix(), )
                     //PredVNFがstartであれば，実行する．
@@ -1119,6 +1236,7 @@ public class CCNRouter extends AbstractNode {
 //System.out.println(sfc_int.getAplID() + ":START  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID());
                         predVNF.setAplID(sfc.getAplID());
                         //処理をさせる．
+                        AutoSFCMgr.getIns().saveStartExecutionTime(sfc_int);
                         startVCPU.exec(predVNF);
                         VM vm = env.getGlobal_vmMap().get(startVCPU.getVMID());
                         //SFインスタンスの保存
@@ -1182,6 +1300,21 @@ public class CCNRouter extends AbstractNode {
                                     1500, this.getRouterID(), p.getCount()+1, newFList);
 
                             newInterest.getAppParams().put(AutoUtil.SFC_NAME, sfc_int);
+
+                            //Interest sending in one-stroke
+                            //生成された先行タスクへのInterestは，ここで送信開始せずに，一旦bundleしてからReadyListによって要求送信を開始するかどうかの判断をする．
+                            if(inOneStroke) {
+                                if(tmpBundledInterests.containsKey(ppVNF.getIDVector().get(1))) {
+                                    tmpBundledInterests.get(ppVNF.getIDVector().get(1)).add(newInterest);
+                                }else {
+                                    LinkedList<InterestPacket> newBundledInt = new LinkedList<>();
+                                    newBundledInt.add(newInterest);
+                                    tmpBundledInterests.put(ppVNF.getIDVector().get(1), newBundledInt);
+                                }
+                                //上記の理由から，in one-strokeの時だけループ内のこの後の処理をスキップ．
+                                continue;
+                            }
+
                             //this.getInterestQueue().add(newInterest);
                             //転送先を決める．かならずルータになる．
                             String newVCPUPrefix = auto.findNextRouter(newInterest, this);
@@ -1195,6 +1328,53 @@ public class CCNRouter extends AbstractNode {
                             nextRouter.getInterestQueue().add(newInterest);
 
 
+                        }
+
+                        //Interest sending in one-stroke
+                        //ReadyListを用いた次の要求送信先へのInterest用意と，BundledInterestの準備，Interestの送信
+                        if(inOneStroke) {
+                            Long newDestinationTask;
+                            InterestPacket newDestinationInterest = null;
+
+                            //ReadyListが空であれば作成してから，１つ取り出す．
+                            if(tmpReadyList.isEmpty()) {
+                                tmpReadyList = AutoSFCMgr.getIns().createReadyList(p, tmpBundledInterests);
+                                AutoSFCMgr.getIns().sortReadyList(tmpReadyList, this, sfc_int);
+                            }
+                            newDestinationTask = tmpReadyList.poll();
+
+                            //ReadyListから選択されたタスクについて，BundledInterestsの中から代表にするものを選ぶ
+                            if(tmpBundledInterests.containsKey(newDestinationTask)) {
+                                newDestinationInterest = tmpBundledInterests.get(newDestinationTask).poll();
+                            }else {
+                                //ERROR:New destination task is not found in current BundledInterests
+                            }
+
+                            if(newDestinationInterest != null) {
+                                //転送先を決める．
+                                //転送先を決める．かならずルータになる．
+                                String newVCPUPrefix = auto.findNextRouter(newDestinationInterest, this);
+                                //targetルータのIDを取得する．
+                                CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
+                                //履歴情報の更新
+                                //新しい代表Interestに対して更新
+                                newDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
+                                newDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
+                                //新しい代表Interest以外にも，ReadyListから選択されているタスクへのものについてはBundledInterestの中から取り出して更新する．
+                                if(tmpBundledInterests.containsKey(newDestinationTask)) {
+                                    Iterator<InterestPacket> destBundledIntIte = tmpBundledInterests.get(newDestinationTask).iterator();
+                                    while(destBundledIntIte.hasNext()) {
+                                        InterestPacket destBundledInt = destBundledIntIte.next();
+                                        destBundledInt.getHistoryList().getLast().setToID(nextRouter.getRouterID());
+                                        destBundledInt.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
+                                    }
+                                }
+                                //代表となるInterestにReadyListとBundledInterestsを加える
+                                newDestinationInterest.getAppParams().put("inOneStroke", true);
+                                newDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
+                                newDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
+                                nextRouter.getInterestQueue().add(newDestinationInterest);
+                            }
                         }
 
                     }
@@ -1219,6 +1399,24 @@ public class CCNRouter extends AbstractNode {
                     //tFaceを
                     //this.addFacetoPit(p, router.getRouterID(), CCNUtil.NODETYPE_ROUTER);
                     router.addFacetoPit(p, this.getRouterID(), CCNUtil.NODETYPE_ROUTER);
+                    //Interest sending in one-stroke
+                    if(inOneStroke) {
+                        if(!tmpBundledInterests.isEmpty()) {
+                            Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                            while(tmpBundledIntIte.hasNext()) {
+                                Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
+                                while(bundledIntIte.hasNext()) {
+                                    InterestPacket bint = bundledIntIte.next();
+                                    //BundledされているInterest全てについてもhistoryを加える
+                                    bint.getHistoryList().add(newHistory);
+                                    //BundledされているInterest全てについてもPITに反映する
+                                    router.addFacetoPit(bint, this.getRouterID(), CCNUtil.NODETYPE_ROUTER);
+                                }
+                            }
+                            p.getAppParams().remove("BundledInterests");
+                            p.getAppParams().put("BundledInterests", tmpBundledInterests);
+                        }
+                    }
 
                     router.forwardInterest(tFace,p);
                     //System.out.println("****FORWARDED: "+this.routerID + "->"+router.getRouterID() + "for "+p.getPrefix());

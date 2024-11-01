@@ -142,7 +142,30 @@ public class CCNNode extends AbstractNode {
                         //取り出して，データを返す．
                         this.state = CCNUtil.STATE_NODE_DATA_REQUESTED;
                         InterestPacket p = this.interestQueue.poll();
+                        //Interest sending in one-stroke
+                        //Interest sendingのモードを取得し，inOneStrokeならBundled-Interestを取り出しておく. 通常CCNNodeには来ないはず．
+                        boolean inOneStroke = false;
+                        HashMap<Long, LinkedList<InterestPacket>> tmpBundledInterests = new HashMap<Long, LinkedList<InterestPacket>>();
+                        if(p.getAppParams().containsKey("inOneStroke")){
+                            inOneStroke = (boolean) (p.getAppParams().get("inOneStroke"));
+                        }
+                        if(inOneStroke){
+                            tmpBundledInterests = (HashMap<Long, LinkedList<InterestPacket>>)p.getAppParams().get("BundledInterests");
+                        }
+
                         this.processDataReturn(p);
+
+                        //Interest sending in one-stroke
+                        //オリジナルコンテンツを保有するCCNNodeであるため，Bundled-Interestsに対してもそのまま処理を行う．
+                        if(tmpBundledInterests != null && !tmpBundledInterests.isEmpty()){
+                            Iterator<LinkedList<InterestPacket>> tmpBundledIntIte = tmpBundledInterests.values().iterator();
+                            while(tmpBundledIntIte.hasNext()){
+                                Iterator<InterestPacket> bundledIntIte = tmpBundledIntIte.next().iterator();
+                                while(bundledIntIte.hasNext()){
+                                    this.processDataReturn(bundledIntIte.next());
+                                }
+                            }
+                        }
 
                     }else{
                         //Thread.sleep(500);
@@ -327,10 +350,22 @@ public class CCNNode extends AbstractNode {
 
                     InterestPacket p  = genInterestPacket(destID, packet);
 
+
+                    //Interest sending in one-stroke
+                    //Interest sendigのモードを取得
+                    int interests_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
+                    //isOneStrokeフラグを立てる．ReadyListやBundledInterestはEND Taskのため空になるが，用意しておく．
+                    if(interests_sending_mode==1) {
+                        p.getAppParams().put("inOneStroke", true);
+                        p.getAppParams().put("ReadyList", new LinkedList<String>());
+                        p.getAppParams().put("BundledInterests", new HashMap<Long, LinkedList<InterestPacket>>());
+                    }
+
                     long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
 
                     p.setMinBW(minBW);
                     long startTime = System.currentTimeMillis();
+                    AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
                     r.sendInterest(p);
                 }
 
