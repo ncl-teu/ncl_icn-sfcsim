@@ -799,32 +799,38 @@ public class AutoSFCMgr implements Serializable {
      */
     public LinkedList<Long> sortReadyList(LinkedList<Long> readyList, CCNRouter router,SFC sfc) {
         HashMap<Long, VNF> vnfMap = sfc.getVnfMap();
+        int vnf_prioritize_mode = AutoUtil.vnf_prioritize_mode;
 
-        Comparator<Long> comparator = new Comparator<Long>() {
-            @Override
-            public int compare(Long readyTask1, Long readyTask2) {
-                AutoRouting auto = (AutoRouting) router.getUsedRouting();
-                VNF readyVNF1 = vnfMap.get(readyTask1);
-                VNF readyVNF2 = vnfMap.get(readyTask2);
+        if(vnf_prioritize_mode==1) {
+            Comparator<Long> comparator = new Comparator<Long>() {
+                @Override
+                public int compare(Long readyTask1, Long readyTask2) {
+                    AutoRouting auto = (AutoRouting) router.getUsedRouting();
+                    VNF readyVNF1 = vnfMap.get(readyTask1);
+                    VNF readyVNF2 = vnfMap.get(readyTask2);
 
-                Iterator<VCPU> routerVCpuIte = router.getvCPUMap().values().iterator();
-                double readyVNF1WSTBlv = 0;
-                double readyVNF2WSTBlv = 0;
-                while(routerVCpuIte.hasNext()) {
-                    VCPU routerVCPU = routerVCpuIte.next();
-                    double VNF1Blv = auto.calcBlevelWST(readyVNF1, routerVCPU, sfc);
-                    double VNF2Blv = auto.calcBlevelWST(readyVNF2, routerVCPU, sfc);
-                    if(VNF1Blv > readyVNF1WSTBlv) {
-                        readyVNF1WSTBlv = VNF1Blv;
+                    Iterator<VCPU> routerVCpuIte = router.getvCPUMap().values().iterator();
+                    double readyVNF1WSTBlv = 0;
+                    double readyVNF2WSTBlv = 0;
+                    while(routerVCpuIte.hasNext()) {
+                        VCPU routerVCPU = routerVCpuIte.next();
+                        double VNF1Blv = auto.calcBlevelWST(readyVNF1, routerVCPU, sfc);
+                        double VNF2Blv = auto.calcBlevelWST(readyVNF2, routerVCPU, sfc);
+                        if(VNF1Blv > readyVNF1WSTBlv) {
+                            readyVNF1WSTBlv = VNF1Blv;
+                        }
+                        if(VNF2Blv > readyVNF2WSTBlv) {
+                            readyVNF2WSTBlv = VNF2Blv;
+                        }
                     }
-                    if(VNF2Blv > readyVNF2WSTBlv) {
-                        readyVNF2WSTBlv = VNF2Blv;
-                    }
+                    return Double.valueOf(readyVNF2WSTBlv).compareTo(Double.valueOf(readyVNF1WSTBlv));
                 }
-                return Double.valueOf(readyVNF2WSTBlv).compareTo(Double.valueOf(readyVNF1WSTBlv));
-            }
-        };
-        readyList.sort(comparator);
+            };
+            readyList.sort(comparator);
+
+        }else {
+
+        }
 
         return readyList;
     }

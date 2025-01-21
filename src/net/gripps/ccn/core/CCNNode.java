@@ -353,7 +353,7 @@ public class CCNNode extends AbstractNode {
 
                     //Interest sending in one-stroke
                     //Interest sendigのモードを取得
-                    int interests_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
+                    int interests_sending_mode = AutoUtil.interest_sending_mode;
                     //isOneStrokeフラグを立てる．ReadyListやBundledInterestはEND Taskのため空になるが，用意しておく．
                     if(interests_sending_mode==1) {
                         p.getAppParams().put("inOneStroke", true);
