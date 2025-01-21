@@ -1251,8 +1251,8 @@ public class CCNRouter extends AbstractNode {
 
                         //Interestパケットの並び変えのためのコード
                         //predVNF orderingのモードを取得
-                        Integer vnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_vnf_ordering_mode"));
-                        if(vnf_ordering_mode == 1){
+                        int predvnf_ordering_mode = AutoUtil.predvnf_ordering_mode;
+                        if(predvnf_ordering_mode == 1){
                             
                             LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
                             Comparator<DataDependence> comparator = new Comparator<DataDependence>() {
@@ -1267,7 +1267,7 @@ public class CCNRouter extends AbstractNode {
                             };
                             sortingDpredList.sort(comparator);
                             dpredIte = sortingDpredList.iterator();
-                        }else if(vnf_ordering_mode == 2) {
+                        }else if(predvnf_ordering_mode == 2) {
 
                             LinkedList<DataDependence> sortingDpredList = predVNF.getDpredList();
                             Comparator<DataDependence> comparator = new Comparator<DataDependence>() {

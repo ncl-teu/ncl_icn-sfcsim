@@ -38,7 +38,15 @@ public class AutoUtil  implements Serializable {
 
     public static int sched_altorithm;
 
-    //FNJ問題への対処
+    //predVNF ordering
+    /**
+     * 0: Normal (random order)
+     * 1: Workload
+     * 2: Blevel
+     */
+    public static int predvnf_ordering_mode;
+
+    //FNJ問題への対処1; Active/Passive check
     /**
      * 0: Active
      * 1: Passive
@@ -55,6 +63,21 @@ public class AutoUtil  implements Serializable {
 
     public static Long fnj_passive_duration;
 
+    //FNJ問題への対処2; Interest sending in one-stroke
+    /**
+     * 0: Normal (multicast)
+     * 1: One-stroke (unicast)
+     * Else: Normal (multicast)
+     */
+    public static int interest_sending_mode;
+
+    /**
+     * 0: Normal (random)
+     * 1: Blevel
+     * 2: SPR (Successor to Predecessor Ratio)
+     * Else: Normal (multicast)
+     */
+    public static int vnf_prioritize_mode;
 
 
 
@@ -87,6 +110,11 @@ public class AutoUtil  implements Serializable {
             AutoUtil.sched_altorithm = Integer.valueOf(AutoUtil.prop.getProperty("sched_algorithm"));
             AutoUtil.fnj_checkmode = Integer.valueOf(AutoUtil.prop.getProperty("fnj_checkmode"));
             AutoUtil.fnj_passive_duration = Long.valueOf(AutoUtil.prop.getProperty("fnj_passive_duration"));
+            // Interest sending in one-stroke
+            AutoUtil.interest_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
+            AutoUtil.vnf_prioritize_mode = Integer.parseInt(AutoUtil.prop.getProperty("sfc_vnf_prioritize_mode"));
+            // predVNF ordering
+            AutoUtil.predvnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_predvnf_ordering_mode"));
 
 
 
