@@ -791,7 +791,7 @@ public class AutoSFCMgr implements Serializable {
 
     /**
      * AutoICNにおいて，後続タスクの割当状況から作成したReadyListを，並び替える処理
-     * そのルータのvCPUに基づいたBlevelによって並び替える
+     * vnf_prioritize_mode: Blevel, SPR(Successor to Predecessor Ratio), Random
      * @param readyList
      * @param router
      * @param sfc
@@ -812,14 +812,14 @@ public class AutoSFCMgr implements Serializable {
                     Iterator<VCPU> routerVCpuIte = router.getvCPUMap().values().iterator();
                     double readyVNF1WSTBlv = 0;
                     double readyVNF2WSTBlv = 0;
-                    while(routerVCpuIte.hasNext()) {
+                    while (routerVCpuIte.hasNext()) {
                         VCPU routerVCPU = routerVCpuIte.next();
                         double VNF1Blv = auto.calcBlevelWST(readyVNF1, routerVCPU, sfc);
                         double VNF2Blv = auto.calcBlevelWST(readyVNF2, routerVCPU, sfc);
-                        if(VNF1Blv > readyVNF1WSTBlv) {
+                        if (VNF1Blv > readyVNF1WSTBlv) {
                             readyVNF1WSTBlv = VNF1Blv;
                         }
-                        if(VNF2Blv > readyVNF2WSTBlv) {
+                        if (VNF2Blv > readyVNF2WSTBlv) {
                             readyVNF2WSTBlv = VNF2Blv;
                         }
                     }
@@ -828,7 +828,27 @@ public class AutoSFCMgr implements Serializable {
             };
             readyList.sort(comparator);
 
+        }else if(vnf_prioritize_mode==2) {
+            Comparator<Long> comparator = new Comparator<Long>() {
+                @Override
+                public int compare(Long readyTask1, Long readyTask2) {
+                    VNF readyVNF1 = vnfMap.get(readyTask1);
+                    VNF readyVNF2 = vnfMap.get(readyTask2);
+
+                    int readyVNF1PredNum = readyVNF1.getDpredList().isEmpty() ? (int)AutoUtil.sfc_vnf_num_max : readyVNF1.getDpredList().size();
+                    int readyVNF2PredNum = readyVNF2.getDpredList().isEmpty() ? (int)AutoUtil.sfc_vnf_num_max : readyVNF2.getDpredList().size();
+                    int readyVNF1SucNum = readyVNF1.getDsucList().size();
+                    int readyVNF2SucNum = readyVNF2.getDsucList().size();
+                    double readyVNF1SPR = (double)readyVNF1SucNum / readyVNF1PredNum;
+                    double readyVNF2SPR = (double)readyVNF2SucNum / readyVNF2PredNum;
+
+                    return Double.valueOf(readyVNF2SPR).compareTo(readyVNF1SPR);
+                }
+            };
+            readyList.sort(comparator);
+
         }else {
+            Collections.shuffle(readyList);
 
         }
 
