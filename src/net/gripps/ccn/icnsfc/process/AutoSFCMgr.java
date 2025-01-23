@@ -795,9 +795,8 @@ public class AutoSFCMgr implements Serializable {
      * @param readyList
      * @param router
      * @param sfc
-     * @return
      */
-    public LinkedList<Long> sortReadyList(LinkedList<Long> readyList, CCNRouter router,SFC sfc) {
+    public void sortReadyList(LinkedList<Long> readyList, CCNRouter router, SFC sfc) {
         HashMap<Long, VNF> vnfMap = sfc.getVnfMap();
         int vnf_prioritize_mode = AutoUtil.vnf_prioritize_mode;
 
@@ -852,7 +851,6 @@ public class AutoSFCMgr implements Serializable {
 
         }
 
-        return readyList;
     }
 
     public double calcExecTime(long w, VCPU vcpu){
