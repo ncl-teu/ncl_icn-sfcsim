@@ -81,7 +81,7 @@
   </target>
   <target name="build" depends="init, resources">
     <!--Compiles the java code from ${src} directory into ${build} directory-->
-    <javac encoding="utf-8" destdir="${build}">
+    <javac encoding="utf-8" destdir="${build}" debug="true">
       <src path="${src}" />
 
      <classpath path="${lib}/commons-math-2.0.jar" />

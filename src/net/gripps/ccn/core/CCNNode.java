@@ -337,10 +337,21 @@ public class CCNNode extends AbstractNode {
 
                     InterestPacket p  = genInterestPacket(destID, packet);
 
+                    //Interest sending in one-stroke
+                    //Interest sendigのモードを取得
+                    int interests_sending_mode = AutoUtil.interest_sending_mode;
+                    //isOneStrokeフラグを立てる．ReadyListやBundledInterestはEND Taskのため空になるが，用意しておく．
+                    if(interests_sending_mode==1) {
+                        p.getAppParams().put("inOneStroke", true);
+                        p.getAppParams().put("ReadyList", new LinkedList<String>());
+                        p.getAppParams().put("BundledInterests", new HashMap<Long, LinkedList<InterestPacket>>());
+                    }
+
                     long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());
 
                     p.setMinBW(minBW);
                     long startTime = System.currentTimeMillis();
+                    AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
                     r.sendInterest(p);
 
                 }else{
