@@ -2,6 +2,7 @@ package net.gripps.ccn.icnsfc.process;
 
 import net.gripps.ccn.CCNUtil;
 import net.gripps.ccn.core.CCNRouter;
+import net.gripps.ccn.core.ForwardHistory;
 import net.gripps.ccn.core.InterestPacket;
 import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.core.AutoEnvironment;
@@ -532,6 +533,39 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
+    public void updateSFCStatistics(InterestPacket p, CCNRouter router, boolean allocated) {
+        if(!CCNMgr.getIns().isSFCMode()){
+            return;
+        }
+
+        HashMap<String, Long> statistics = (HashMap<String, Long>) p.getAppParams().get("SFCStatistics");
+        LinkedList<ForwardHistory> fList = p.getHistoryList();
+
+        long hopDelay = 0L;
+        if(fList.size() == 1) {
+            hopDelay = fList.getLast().getArrivalTime() - fList.getLast().getStartTime();
+        }else if(fList.size() >= 2) {
+            hopDelay = fList.getLast().getArrivalTime() - fList.get(fList.size() - 2).getArrivalTime();
+        }else {
+            // An error occurred when calculating hopDelay
+            return;
+        }
+
+        if(statistics != null){
+            long totalHops = statistics.getOrDefault("totalHops", 0L);
+            long totalAlloc = statistics.getOrDefault("totalAlloc", 0L);
+
+            statistics.put("totalHops", totalHops + 1L);
+            statistics.put("avgDelayPerHop", (statistics.get("avgDelayPerHop") * totalHops + hopDelay) / (totalHops + 1L));
+            statistics.put("avgNodeBW", (statistics.get("avgNodeBW") * totalHops + router.getBw()) / (totalHops + 1L));
+            statistics.put("avgNodeMIPS", (statistics.get("avgNodeMIPS") * totalHops + router.getMIPS()) / (totalHops + 1L));
+            if(allocated) {
+                statistics.put("totalAlloc", totalAlloc + 1L);
+                statistics.put("avgHopsPerAlloc", (totalHops + 1L) / (totalAlloc + 1L));
+                statistics.put("avgHopsPerInt", ((statistics.get("avgHopsPerInt") * totalAlloc) + fList.size()) / (totalAlloc + 1L));
+            }
+        }
+    }
 
 
 

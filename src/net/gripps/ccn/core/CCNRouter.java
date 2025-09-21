@@ -1009,14 +1009,16 @@ public class CCNRouter extends AbstractNode {
                     CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
 
                     //履歴情報の更新
+                    AutoSFCMgr.getIns().updateSFCStatistics(p, this, false);
                     //新しい代表Interestに対して更新
                     reDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
                     reDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
                     //BundledInterestsに対しては更新しない．
-                    //代表となるInterestにReadyListとBundledInterestsを加える
+                    //代表となるInterestにReadyListとBundledInterests, SFCStatisticsを加える
                     reDestinationInterest.getAppParams().put("inOneStroke", true);
                     reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
                     reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
+                    reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                     nextRouter.getInterestQueue().add(reDestinationInterest);
                 }
             }
@@ -1186,6 +1188,9 @@ public class CCNRouter extends AbstractNode {
                     //System.out.println(sfc_int.getAplID() + ":Fixed  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID() + "From:"+toID);
                     //ここにたどり着くまでのホップ数を保存
                     AutoSFCMgr.getIns().saveAppHopNum(p, sfc_int);
+                    //SFCStatisticsを更新
+                    AutoSFCMgr.getIns().updateSFCStatistics(p, this, true);
+
                     Long predID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
                     VNF predVNF = sfc_int.findVNFByLastID(predID);
                     Long sucID = AutoSFCMgr.getIns().getSucVNFID(p.getPrefix());
@@ -1324,6 +1329,8 @@ public class CCNRouter extends AbstractNode {
                             //履歴情報の更新．
                             newHistory.setToID(nextRouter.getRouterID());
                             newHistory.setToType(CCNUtil.NODETYPE_ROUTER);
+                            //SFCStatisticsを引き継ぎ，付け加える
+                            newInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
 
                             nextRouter.getInterestQueue().add(newInterest);
 
@@ -1369,10 +1376,11 @@ public class CCNRouter extends AbstractNode {
                                         destBundledInt.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
                                     }
                                 }
-                                //代表となるInterestにReadyListとBundledInterestsを加える
+                                //代表となるInterestにReadyListとBundledInterests, SFCStatisticsを加える
                                 newDestinationInterest.getAppParams().put("inOneStroke", true);
                                 newDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
                                 newDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
+                                newDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                                 nextRouter.getInterestQueue().add(newDestinationInterest);
                             }
                         }
@@ -1386,6 +1394,8 @@ public class CCNRouter extends AbstractNode {
                     ForwardHistory newHistory = new ForwardHistory(this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
                             (long)router.getRouterID(), CCNUtil.NODETYPE_ROUTER, System.currentTimeMillis(), -1);
                     p.getHistoryList().add(newHistory);
+                    //SFCStatisticsを更新
+                    AutoSFCMgr.getIns().updateSFCStatistics(p, this, false);
                     Face tFace = null;
                     if(!this.getFace_routerMap().containsKey(router.getRouterID())){
                         tFace = new Face(null, router.getRouterID(), CCNUtil.NODETYPE_ROUTER);

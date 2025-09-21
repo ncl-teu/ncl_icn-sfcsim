@@ -352,6 +352,17 @@ public class CCNNode extends AbstractNode {
                     p.setMinBW(minBW);
                     long startTime = System.currentTimeMillis();
                     AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
+                    p.getAppParams().put("SFCStatistics", new HashMap<String, Long>(){
+                        {
+                            put("totalHops", 0L);       // 合計ホップ数
+                            put("totalAlloc", 0L);      // 合計割当完了タスク数
+                            put("avgDelayPerHop", 0L);  // 平均Interest処理遅延 (1ノードあたり, 経由したノード)
+                            put("avgNodeBW", 0L);       // 平均帯域幅 (1ノードあたり, 経由したノード)
+                            put("avgNodeMIPS", 0L);     // 平均処理能力 (1ノードあがり, 経由したノード) (or 割当先として選択されたノードの平均処理能力)
+                            put("avgHopsPerInt", 0L);   // 平均ホップ数 (1Interestあたり)
+                            put("avgHopsPerAlloc", 0L); // 平均ホップ数 (1割当あたり)
+                        }
+                    });
                     r.sendInterest(p);
 
                 }else{
@@ -377,6 +388,18 @@ public class CCNNode extends AbstractNode {
                     p.setMinBW(minBW);
                     long startTime = System.currentTimeMillis();
                     AutoSFCMgr.getIns().saveStartRequestingTime(p, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
+                    p.getAppParams().put("SFCStatistics", new HashMap<String, Long>(){
+                        {
+                            put("totalHops", 0L);
+                            put("totalAlloc", 0L);
+                            put("avgDelayPerHop", 0L);
+                            put("avgNodeBW", 0L);
+                            put("avgNodeMIPS", 0L);
+                            put("avgHopsPerInt", 0L);
+                            put("avgHopsPerAlloc", 0L);
+                        }
+                    });
+                    System.out.println(p.getPrefix() +  ", sendInterest on node " + this.getNodeID());
                     r.sendInterest(p);
                 }
 
