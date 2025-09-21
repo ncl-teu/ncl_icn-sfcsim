@@ -113,6 +113,11 @@
         <classpath path="${lib}/ncl-sfcworkflow.jar" />
         <classpath path="${lib}/ncl-taskschedsim.jar" />
 
+        <classpath path="${lib}/jung-2.0.1/jung-api-2.0.1.jar" />
+        <classpath path="${lib}/jung-2.0.1/jung-graph-impl-2.0.1.jar" />
+        <classpath path="${lib}/jung-2.0.1/jung-visualization-2.0.1.jar" />
+        <classpath path="${lib}/jung-2.0.1/jung-algorithms-2.0.1.jar" />
+        <classpath path="${lib}/jung-2.0.1/collections-generic-4.01.jar" />
 
 
 
