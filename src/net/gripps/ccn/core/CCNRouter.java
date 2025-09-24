@@ -1182,7 +1182,7 @@ public class CCNRouter extends AbstractNode {
 
                 //SFC sfc_router = this.getSfcMap().get(sfc_int.getSfcID());
                 //もし同一であれば，自分で実行する．かつ，SFCの当該タスクの割当先を自分に設定する．
-                if (this.getRouterID().equals(router.getRouterID())||(this.containsSameRouter(router.getRouterID(), p))) {
+                if (this.getRouterID().equals(router.getRouterID())) {
                     //System.out.println(sfc_int.getAplID() + ":Fixed  VCPU for "+p.getPrefix() + ":"+vCPUID+"@"+this.getRouterID() + "From:"+toID);
                     //ここにたどり着くまでのホップ数を保存
                     AutoSFCMgr.getIns().saveAppHopNum(p, sfc_int);
