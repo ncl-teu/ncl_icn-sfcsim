@@ -265,15 +265,28 @@ public class AutoRouting extends LongestMatchRouting {
         }
 
         //他のルータIDであれば，実行しようとする．
+        //転送されてきた経路におけるループを検証
         Iterator<ForwardHistory> fIte = p.getHistoryList().iterator();
         boolean isForwarded = false;
+        int historyCount = 0;
         while(fIte.hasNext()) {
             ForwardHistory history = fIte.next();
+            //そのSFCにおける一番最初の要求 (Node(=ユーザ)から送信された要求) に対する対応
+            if((history.getFromType() == CCNUtil.NODETYPE_NODE) && (history.getToType() == CCNUtil.NODETYPE_ROUTER)){
+                isForwarded = true;
+                break;
+            }
+            //それ以外の要求に対する対応
             if (history.getToID().equals(r.getRouterID()) && (history.getToType() == CCNUtil.NODETYPE_ROUTER)) {
                 //過去に自分へのinterest転送がなされているかどうか
                 //もし転送済みであれば，自身のIDを返す．
-                isForwarded = true;
-                break;
+                //isForwarded = true;
+                //break;
+                historyCount++;
+                if(historyCount >= 2){
+                    isForwarded = true;
+                    break;
+                }
             }
         }
         //転送済みなら，ここで自分のIDをreturnして終わり．
@@ -321,6 +334,18 @@ public class AutoRouting extends LongestMatchRouting {
             if(face.getType() == CCNUtil.NODETYPE_ROUTER){
                 //ルータを取得する．
                 CCNRouter vm = CCNMgr.getIns().getRouterMap().get(face.getPointerID());
+
+                //転送先候補におけるループを検証
+                boolean alreadyVisited = false;
+                for (ForwardHistory history : p.getHistoryList()) {
+                    if (history.getToID().equals(vm.getRouterID())) {
+                        alreadyVisited = true;
+                        break;
+                    }
+                }
+                if(alreadyVisited){
+                    continue;
+                }
 
                 ComputeHost host = env.getGlobal_hostMap().get(vm.getHostID());
                 if(host == null){
