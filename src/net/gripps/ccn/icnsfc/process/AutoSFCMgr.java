@@ -887,10 +887,62 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
+    public boolean decideDupAssigning(VNF vnf, SFC sfc, HashMap<String, Long> statistics){
+        long avgBW = statistics.get("avgNodeBW");
+        long avgMIPS = statistics.get("avgNodeMIPS");
+        long avgHops = statistics.get("avgHopsPerInt");
+        long avgDelay = statistics.get("avgDelayPerHop");
+        long alloc = statistics.get("totalAlloc");
+
+        // 1 後続タスクから見たCP上にTaskがいるか
+        boolean onCP = false;
+        if(vnf.getDsucList().isEmpty()){
+            // END Task
+            onCP = true;
+        }else {
+            // Not END Task
+            Iterator<DataDependence> dsucIte = vnf.getDsucList().iterator();
+            while(dsucIte.hasNext()) {
+                DataDependence dsuc = dsucIte.next();
+                long sucID = dsuc.getFromID().get(1);
+                VNF sucVNF = sfc.getVnfMap().get(sucID);
+                LinkedList<Long> sucCP = this.calcCriticalPath(sucVNF, sfc);
+                if(sucCP.contains(vnf.getIDVector().get(1))){
+                    onCP = true;
+                    break;
+                }
+            }
+            if(onCP) {
+                // CP上にいるので続行
+            }else {
+                // CP上にいないため，重複割当の効果なしと判断
+                return false;
+            }
+        }
+
+        // 2 PSOを見積もり重複スケジューリングの可能性を検証する
+        double avgTlevel = calcAVGTlevel(vnf, sfc, new HashMap<>(), avgBW, avgMIPS) * 1000;
+        LinkedList<Long> CP = calcCriticalPath(vnf, sfc);
+        double onestrokePST = calcPredictSchedulingTime(avgHops, avgDelay, (int) (sfc.getVnfMap().size() - alloc));
+        double dupPST = calcPredictSchedulingTime(avgHops, avgDelay, (CP.size()) - 1);
+        System.out.println("onestrokePST: " + onestrokePST + ", dupPST: " + dupPST + ", avgTlevel: " + avgTlevel);
+        if(onestrokePST >= dupPST + avgTlevel){
+            // 重複割当の効果あり
+            return true;
+        }else {
+            // 重複割当の効果なし
+            return false;
+        }
+    }
+
     public double calcExecTime(long w, VCPU vcpu){
         return CloudUtil.getRoundedValue((double) w / (double) vcpu.getMips());
 
 
+    }
+
+    public double calcExecTime(long w, long MIPS){
+        return CloudUtil.getRoundedValue((double) w / (double) MIPS);
     }
 
 
@@ -929,6 +981,69 @@ public class AutoSFCMgr implements Serializable {
 
         return time;
 
+    }
+
+    public double calcComTime(long dataSize, long BW) {
+        return CloudUtil.getRoundedValue((double) dataSize / (double) BW);
+    }
+
+    public double calcAVGTlevel(VNF vnf, SFC sfc, HashMap<Long, Double> tlevelMap, long avgBW, long avgMIPS) {
+        double maxValue = -1;
+
+        Iterator<DataDependence> dpredIte = vnf.getDpredList().iterator();
+        //START Task
+        if(vnf.getDpredList().isEmpty()){
+            tlevelMap.put(vnf.getIDVector().get(1), 0.0d);
+            return 0.0d;
+        }
+        // Not START Task
+        while (dpredIte.hasNext()) {
+            DataDependence dpred = dpredIte.next();
+            Long fromID = dpred.getFromID().get(1);
+            VNF fromVNF = sfc.getVnfMap().get(fromID);
+            double tmpTlevel = 0.0d;
+            long dataSize = dpred.getMaxDataSize();
+            if(tlevelMap.containsKey(fromID)) {
+                tmpTlevel = tlevelMap.get(fromID) + this.calcExecTime(fromVNF.getWorkLoad(), avgMIPS) + this.calcComTime(dataSize, avgBW);
+            }else {
+                tmpTlevel = this.calcAVGTlevel(fromVNF, sfc, tlevelMap, avgBW, avgMIPS) + this.calcExecTime(fromVNF.getWorkLoad(), avgMIPS) + this.calcComTime(dataSize, avgBW);
+            }
+            if(maxValue <= tmpTlevel) {
+                maxValue = tmpTlevel;
+                vnf.setDominantPredID(fromID);
+            }
+        }
+
+        tlevelMap.put(vnf.getIDVector().get(1), maxValue);
+        return maxValue;
+    }
+
+    public LinkedList<Long> calcCriticalPath(VNF vnf, SFC sfc) {
+        LinkedList<Long> criticalPath;
+
+        if(vnf.getDpredList().isEmpty()){
+            // START Task
+            criticalPath = new LinkedList<>();
+        }else {
+            // Not START Task
+            long dominantPredID;
+            try {
+                dominantPredID = vnf.getDominantPredID();
+            }catch(Exception e){
+                // dominantPredIDが未計算であれば，適当にavgTlevelを計算することで求める
+                this.calcAVGTlevel(vnf, sfc, new HashMap<>(), 1L, 1L);
+                dominantPredID = vnf.getDominantPredID();
+            }
+            VNF dominantPredVNF = sfc.getVnfMap().get(dominantPredID);
+            criticalPath = this.calcCriticalPath(dominantPredVNF, sfc);
+
+        }
+        criticalPath.add(vnf.getIDVector().get(1));
+        return criticalPath;
+    }
+
+    public double calcPredictSchedulingTime(Long avgHops, Long avgDelay, int cpNum) {
+        return (double)avgHops * (double)avgDelay * cpNum;
     }
 
     public long getJobID(String prefix){
