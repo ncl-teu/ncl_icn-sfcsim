@@ -1318,7 +1318,7 @@ public class CCNRouter extends AbstractNode {
 
                             //Interest sending in one-stroke
                             //生成された先行タスクへのInterestは，ここで送信開始せずに，一旦bundleしてからReadyListによって要求送信を開始するかどうかの判断をする．
-                            if(inOneStroke && !isDupAssigning) {
+                            if(inOneStroke) {
                                 if(tmpBundledInterests.containsKey(ppVNF.getIDVector().get(1))) {
                                     tmpBundledInterests.get(ppVNF.getIDVector().get(1)).add(newInterest);
                                 }else {
@@ -1327,7 +1327,9 @@ public class CCNRouter extends AbstractNode {
                                     tmpBundledInterests.put(ppVNF.getIDVector().get(1), newBundledInt);
                                 }
                                 //上記の理由から，in one-strokeの時だけループ内のこの後の処理をスキップ．
-                                continue;
+                                if(!isDupAssigning) {
+                                    continue;
+                                }
                             }
 
                             //this.getInterestQueue().add(newInterest);
