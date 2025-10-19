@@ -1291,6 +1291,16 @@ public class CCNRouter extends AbstractNode {
                             dpredIte = sortingDpredList.iterator();
                         }//branch "feature-predVNF-ordering" 用のコード
 
+                        //duplicate-based interest forwarding
+                        //重複割当を行うかどうかの判断
+                        boolean isDupAssigning = false;
+                        if(inOneStroke) {
+                            isDupAssigning = AutoSFCMgr.getIns().decideDupAssigning(predVNF, sfc_int, (HashMap<String, Long>) p.getAppParams().get("SFCStatistics"));
+                            if(AutoUtil.interest_duplicate_mode == 0) {
+                                isDupAssigning = false;
+                            }
+                        }
+
                         while(dpredIte.hasNext()){
                             DataDependence dpred = dpredIte.next();
                             VNF ppVNF = sfc_int.findVNFByLastID(dpred.getFromID().get(1));
@@ -1308,7 +1318,7 @@ public class CCNRouter extends AbstractNode {
 
                             //Interest sending in one-stroke
                             //生成された先行タスクへのInterestは，ここで送信開始せずに，一旦bundleしてからReadyListによって要求送信を開始するかどうかの判断をする．
-                            if(inOneStroke) {
+                            if(inOneStroke && !isDupAssigning) {
                                 if(tmpBundledInterests.containsKey(ppVNF.getIDVector().get(1))) {
                                     tmpBundledInterests.get(ppVNF.getIDVector().get(1)).add(newInterest);
                                 }else {
@@ -1390,12 +1400,12 @@ public class CCNRouter extends AbstractNode {
 
                 } else {
                     //転送モードのとき
+                    //SFCStatisticsを更新
+                    AutoSFCMgr.getIns().updateSFCStatistics(p, this, false);
                     //historyに加えてから，宛先へ転送する．
                     ForwardHistory newHistory = new ForwardHistory(this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
                             (long)router.getRouterID(), CCNUtil.NODETYPE_ROUTER, System.currentTimeMillis(), -1);
                     p.getHistoryList().add(newHistory);
-                    //SFCStatisticsを更新
-                    AutoSFCMgr.getIns().updateSFCStatistics(p, this, false);
                     Face tFace = null;
                     if(!this.getFace_routerMap().containsKey(router.getRouterID())){
                         tFace = new Face(null, router.getRouterID(), CCNUtil.NODETYPE_ROUTER);

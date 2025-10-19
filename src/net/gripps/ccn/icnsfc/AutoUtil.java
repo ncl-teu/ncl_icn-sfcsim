@@ -71,6 +71,8 @@ public class AutoUtil  implements Serializable {
      */
     public static int interest_sending_mode;
 
+    public static int interest_duplicate_mode;
+
     /**
      * 0: Normal (random)
      * 1: Blevel
@@ -113,6 +115,8 @@ public class AutoUtil  implements Serializable {
             // Interest sending in one-stroke
             AutoUtil.interest_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
             AutoUtil.vnf_prioritize_mode = Integer.parseInt(AutoUtil.prop.getProperty("sfc_vnf_prioritize_mode"));
+            // Interest duplicate mode
+            AutoUtil.interest_duplicate_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_duplicate_mode"));
             // predVNF ordering
             AutoUtil.predvnf_ordering_mode = Integer.valueOf(AutoUtil.prop.getProperty("sfc_predvnf_ordering_mode"));
 
