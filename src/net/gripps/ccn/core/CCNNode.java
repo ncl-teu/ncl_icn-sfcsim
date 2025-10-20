@@ -399,7 +399,6 @@ public class CCNNode extends AbstractNode {
                             put("avgHopsPerAlloc", 0L);
                         }
                     });
-                    System.out.println(p.getPrefix() +  ", sendInterest on node " + this.getNodeID());
                     r.sendInterest(p);
                 }
 

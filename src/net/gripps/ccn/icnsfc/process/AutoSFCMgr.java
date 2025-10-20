@@ -925,7 +925,6 @@ public class AutoSFCMgr implements Serializable {
         LinkedList<Long> CP = calcCriticalPath(vnf, sfc);
         double onestrokePST = calcPredictSchedulingTime(avgHops, avgDelay, (int) (sfc.getVnfMap().size() - alloc));
         double dupPST = calcPredictSchedulingTime(avgHops, avgDelay, (CP.size()) - 1);
-        System.out.println("onestrokePST: " + onestrokePST + ", dupPST: " + dupPST + ", avgTlevel: " + avgTlevel);
         if(onestrokePST >= dupPST + avgTlevel){
             // 重複割当の効果あり
             return true;

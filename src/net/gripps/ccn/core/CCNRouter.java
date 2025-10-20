@@ -205,6 +205,9 @@ public class CCNRouter extends AbstractNode {
                 //  System.out.println("RouterID:"+this.routerID);
                 Thread.sleep(100);
                 if (!this.interestQueue.isEmpty()) {
+                    Thread.sleep(CloudUtil.genLong2(AutoUtil.sched_scheduling_per_delay_min, AutoUtil.sched_scheduling_per_delay_max, 1, 0.5));
+                    Thread.sleep(CloudUtil.genLong2(AutoUtil.sched_dispatch_per_delay_min, AutoUtil.sched_dispatch_per_delay_max, 1, 0.5));
+                    Thread.sleep(this.ccn_hop_per_delay);
                     //InterestPacketを取り出す．
                     InterestPacket p = this.interestQueue.poll();
                     //そして中身を見る．

@@ -81,6 +81,11 @@ public class AutoUtil  implements Serializable {
      */
     public static int vnf_prioritize_mode;
 
+    public static Long sched_scheduling_per_delay_min;
+    public static Long sched_scheduling_per_delay_max;
+    public static Long sched_dispatch_per_delay_min;
+    public static Long sched_dispatch_per_delay_max;
+
 
 
     /**
@@ -112,6 +117,11 @@ public class AutoUtil  implements Serializable {
             AutoUtil.sched_altorithm = Integer.valueOf(AutoUtil.prop.getProperty("sched_algorithm"));
             AutoUtil.fnj_checkmode = Integer.valueOf(AutoUtil.prop.getProperty("fnj_checkmode"));
             AutoUtil.fnj_passive_duration = Long.valueOf(AutoUtil.prop.getProperty("fnj_passive_duration"));
+            // Delay simulation
+            AutoUtil.sched_scheduling_per_delay_min = Long.valueOf(AutoUtil.prop.getProperty("sched_scheduling_per_delay_min"));
+            AutoUtil.sched_scheduling_per_delay_max = Long.valueOf(AutoUtil.prop.getProperty("sched_scheduling_per_delay_max"));
+            AutoUtil.sched_dispatch_per_delay_min = Long.valueOf(AutoUtil.prop.getProperty("sched_dispatch_per_delay_min"));
+            AutoUtil.sched_dispatch_per_delay_max = Long.valueOf(AutoUtil.prop.getProperty("sched_dispatch_per_delay_max"));
             // Interest sending in one-stroke
             AutoUtil.interest_sending_mode = Integer.parseInt(AutoUtil.prop.getProperty("ccn_interests_sending_mode"));
             AutoUtil.vnf_prioritize_mode = Integer.parseInt(AutoUtil.prop.getProperty("sfc_vnf_prioritize_mode"));
