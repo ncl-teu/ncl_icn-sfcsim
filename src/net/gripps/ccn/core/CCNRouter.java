@@ -1410,7 +1410,9 @@ public class CCNRouter extends AbstractNode {
                     //historyに加えてから，宛先へ転送する．
                     ForwardHistory newHistory = new ForwardHistory(this.getRouterID(), CCNUtil.NODETYPE_ROUTER,
                             (long)router.getRouterID(), CCNUtil.NODETYPE_ROUTER, System.currentTimeMillis(), -1);
-                    p.getHistoryList().add(newHistory);
+                    //forwardInterest()にてhistoryを加えるため，ここでは加えない． (代わりに宛先情報(face)を渡している．)
+                    //もしここでhistoryを加えてしまうと，履歴の重複とループの誤検知が生じる．
+                    //p.getHistoryList().add(newHistory);
                     Face tFace = null;
                     if(!this.getFace_routerMap().containsKey(router.getRouterID())){
                         tFace = new Face(null, router.getRouterID(), CCNUtil.NODETYPE_ROUTER);
