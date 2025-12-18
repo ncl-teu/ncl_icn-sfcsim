@@ -27,6 +27,15 @@ public class NFVUtil extends CloudUtil {
     public static int dist_vnf_datasize;
     public static double dist_vnf_datasize_mu;
 
+    /**
+     * SFCの生成モード
+     * 0: Random(default) 1: ファイルから読み取る
+     */
+    public static int sfc_from_file;
+    /**
+     * DAG file (Workflow YAML Scheme) のパス
+     */
+    public static String sfc_file_path;
     public static long sfc_vnf_num;
  //   public static int sfc_vnf_indegree_min;
  ///   public static int sfc_vnf_indegree_max;
@@ -121,6 +130,8 @@ public class NFVUtil extends CloudUtil {
             NFVUtil.vnf_datasize_max = Long.valueOf( CloudUtil.prop.getProperty("vnf_datasize_max"));
             NFVUtil.dist_vnf_datasize = Integer.valueOf( CloudUtil.prop.getProperty("dist_vnf_datasize"));
             NFVUtil.dist_vnf_datasize_mu = Double.valueOf( CloudUtil.prop.getProperty("dist_vnf_datasize_mu"));
+            NFVUtil.sfc_from_file = Integer.valueOf(NFVUtil.prop.getProperty("sfc_from_file"));
+            NFVUtil.sfc_file_path = NFVUtil.prop.getProperty("sfc_file_path");
             NFVUtil.sfc_vnf_num = Long.valueOf( CloudUtil.prop.getProperty("sfc_vnf_num"));
            // NFVUtil.sfc_vnf_indegree_min = Integer.valueOf( CloudUtil.prop.getProperty("sfc_vnf_indegree_min"));
            // NFVUtil.sfc_vnf_indegree_max = Integer.valueOf( CloudUtil.prop.getProperty("sfc_vnf_indegree_max"));

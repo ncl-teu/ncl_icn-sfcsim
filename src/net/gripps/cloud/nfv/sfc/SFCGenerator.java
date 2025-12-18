@@ -4,7 +4,6 @@ import net.gripps.cloud.nfv.NFVUtil;
 import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.clustering.tool.Calc;
-import net.gripps.ccn.icnsfc.AutoUtil;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -149,7 +148,7 @@ public class SFCGenerator {
             long nextId = 1;
 
             try {
-                BufferedReader br = new BufferedReader(new FileReader(AutoUtil.sfc_file_path));
+                BufferedReader br = new BufferedReader(new FileReader(NFVUtil.sfc_file_path));
                 String line;
                 String currentJobId = null;
                 boolean inChildren = false;
@@ -301,7 +300,7 @@ public class SFCGenerator {
 
     public SFC autoSFCProcess() {
         //this.setSfc(null);
-        if (AutoUtil.sfc_from_file == 1) {
+        if (NFVUtil.sfc_from_file == 1) {
             sfc = this.constructFunctionFromFile();
             sfc = this.assignDependencyProcessFromFile(sfc);
         } else {

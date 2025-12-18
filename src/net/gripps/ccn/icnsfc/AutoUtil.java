@@ -29,17 +29,6 @@ public class AutoUtil  implements Serializable {
 
     //public static String VNF_TOID = "vnf_toid";
 
-    /**
-     * SFCの生成モード
-     * 0: Random(default) 1: ファイルから読み取る
-     */
-    public static int sfc_from_file;
-
-    /**
-     * DAG file (Workflow YAML Scheme) のパス
-     */
-    public static String sfc_file_path;
-
     public static long sfc_vnf_num_min;
 
     public static long sfc_vnf_num_max;
@@ -91,8 +80,6 @@ public class AutoUtil  implements Serializable {
             AutoUtil.prop.load(new FileInputStream(fileName));
             AutoUtil.ccn_sfc_totalnum = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_totalnum"));
             AutoUtil.ccn_sfc_typenum = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_typenum"));
-            AutoUtil.sfc_from_file = Integer.valueOf(AutoUtil.prop.getProperty("sfc_from_file"));
-            AutoUtil.sfc_file_path = AutoUtil.prop.getProperty("sfc_file_path");
             AutoUtil.sfc_vnf_num_min = Long.valueOf(AutoUtil.prop.getProperty("sfc_vnf_num_min"));
             AutoUtil.sfc_vnf_num_max= Long.valueOf(AutoUtil.prop.getProperty("sfc_vnf_num_max"));
             AutoUtil.ccn_sfc_mode = Integer.valueOf(AutoUtil.prop.getProperty("ccn_sfc_mode"));
