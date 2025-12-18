@@ -5,6 +5,8 @@ import net.gripps.clustering.common.aplmodel.CustomIDSet;
 import net.gripps.clustering.common.aplmodel.DataDependence;
 import net.gripps.clustering.tool.Calc;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.*;
 
 /**
@@ -33,6 +35,10 @@ public class SFCGenerator {
      */
     protected VNF virtualENDVNF;
     /**
+     * 仮想的な終了VNFのID -1 otherwise.
+     */
+    protected Long virtualEndTaskID = -1L;
+    /**
      *
      */
     protected TreeSet aplIDSet;
@@ -41,6 +47,15 @@ public class SFCGenerator {
      *
      */
     protected int startVNFNum;
+
+    /**
+     * Adjacency list parsed from file (Predecessor -> List of Successors)
+     */
+    protected HashMap<Long, LinkedList<Long>> fileAdjacencyList;
+    /**
+     * Number of tasks in the file
+     */
+    protected long fileTaskNum;
 
 
 
@@ -121,7 +136,117 @@ public class SFCGenerator {
         return null;
     }
 
+    /**
+     * PegasusWMSのDAGファイル(Workflow YAML Scheme)からParseし，SFCを作成する (VNFs only).
+     * @return
+     */
+    public SFC constructFunctionFromFile() {
+        // Parse file if not already parsed (cache the structure, assuming it doesn't change per run)
+        if (this.fileAdjacencyList == null) {
+            this.fileAdjacencyList = new HashMap<Long, LinkedList<Long>>();
+            HashMap<String, Long> idMap = new HashMap<String, Long>();
+            long nextId = 1;
 
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(NFVUtil.sfc_file_path));
+                String line;
+                String currentJobId = null;
+                boolean inChildren = false;
+
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().isEmpty() || line.trim().startsWith("#")) continue;
+                    // Workflow YAML Scheme parsing
+                    // Assumes format:
+                    // - id: ID... (FromID)
+                    //   children:
+                    //   - ID... (ToID)
+                    if (line.startsWith("- id:")) {
+                        currentJobId = line.substring("- id:".length()).trim();
+                        if (!idMap.containsKey(currentJobId)) {
+                            idMap.put(currentJobId, nextId++);
+                        }
+                        inChildren = false;
+                    } else if (line.trim().startsWith("children:")) {
+                        inChildren = true;
+                    } else if (inChildren && line.trim().startsWith("-")) {
+                        String childId = line.trim().substring("-".length()).trim();
+                        if (!idMap.containsKey(childId)) {
+                            idMap.put(childId, nextId++);
+                        }
+
+                        Long fromId = idMap.get(currentJobId);
+                        Long toId = idMap.get(childId);
+
+                        if (!this.fileAdjacencyList.containsKey(fromId)) {
+                            this.fileAdjacencyList.put(fromId, new LinkedList<Long>());
+                        }
+                        this.fileAdjacencyList.get(fromId).add(toId);
+                    }
+                }
+                br.close();
+                this.fileTaskNum = idMap.size();
+
+                // Check for multiple End Tasks
+                // An end task is a task that does not appear as a source in fileAdjacencyList
+                // (i.e., it has no outgoing edges)
+                LinkedList<Long> endTasks = new LinkedList<Long>();
+                // All possible IDs are 1 to fileTaskNum
+                for(long i=1; i<=this.fileTaskNum; i++){
+                    if(!this.fileAdjacencyList.containsKey(i)){
+                        endTasks.add(i);
+                    }
+                }
+
+                // If multiple end tasks exist, create a virtual end task
+                if(endTasks.size() > 1){
+                    // Increment task count for the virtual end task
+                    this.fileTaskNum++;
+                    this.virtualEndTaskID = this.fileTaskNum;
+
+                    // Add edges from all original end tasks to the virtual end task
+                    for(Long originalEndID : endTasks){
+                        if (!this.fileAdjacencyList.containsKey(originalEndID)) {
+                            this.fileAdjacencyList.put(originalEndID, new LinkedList<Long>());
+                        }
+                        this.fileAdjacencyList.get(originalEndID).add(this.virtualEndTaskID);
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            // Create SFC
+            SFC apl = new SFC(-1, -1, -1, -1, -1, -1,
+                    -1, null, new HashMap<Long, VNF>(), new HashMap<Long, VNFCluster>(), new Long(1), -1, -1);
+            Vector<Long> id = new Vector<Long>();
+            id.add(new Long(1));
+            apl.setIDVector(id);
+
+            // Create VNFs
+            // Iterate 1 to fileTaskNum to ensure IDs match our parsed IDs (1..N)
+            for (long i = 1; i <= this.fileTaskNum; i++) {
+                VNF vnf = this.buildChildVNF();
+
+                // If this is the virtual end task, set weights to 0
+                if (this.virtualEndTaskID != -1L && i == this.virtualEndTaskID) {
+                    vnf.setWorkLoad(0);
+                    vnf.setUsage(0);
+                }
+
+                // Ensure the VNF gets the correct ID (i)
+                // SFC.addVNF assigns IDs sequentially starting from 1.
+                apl.addVNF(vnf);
+            }
+            return apl;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 
     /**
@@ -175,8 +300,13 @@ public class SFCGenerator {
 
     public SFC autoSFCProcess() {
         //this.setSfc(null);
-        SFC sfc = this.autoconstructFunction();
-        sfc = this.autoassignDependencyProcess(sfc);
+        if (NFVUtil.sfc_from_file == 1) {
+            sfc = this.constructFunctionFromFile();
+            sfc = this.assignDependencyProcessFromFile(sfc);
+        } else {
+            sfc = this.autoconstructFunction();
+            sfc = this.autoassignDependencyProcess(sfc);
+        }
         //完成したSFCを取得
 
         //this.sfcList.add(sfc);
@@ -662,6 +792,104 @@ public class SFCGenerator {
 
     }
 
+    /**
+     * ParsedされたDAGファイル(Workflow YAML Scheme)に基づき，ファンクション間の依存関係を決めるためのメソッドです．
+     * @param sfc
+     * @return
+     */
+    public SFC assignDependencyProcessFromFile(SFC sfc) {
+        HashMap<Long, VNF> vnfMap = sfc.getVnfMap();
+        int vnfnum = vnfMap.size();
+
+        // Calculate depth (approximate or update later)
+        sfc.setDepth((int) (Math.sqrt(vnfnum) / NFVUtil.depth_alpha));
+
+        // Add dependencies
+        if (this.fileAdjacencyList != null) {
+            Iterator<Long> it = this.fileAdjacencyList.keySet().iterator();
+            while (it.hasNext()) {
+                Long fromId = it.next();
+                LinkedList<Long> toIds = this.fileAdjacencyList.get(fromId);
+                VNF fromVNF = vnfMap.get(fromId);
+
+                if (fromVNF == null) continue;
+
+                Iterator<Long> toIt = toIds.iterator();
+                while (toIt.hasNext()) {
+                    Long toId = toIt.next();
+                    VNF toVNF = vnfMap.get(toId);
+
+                    if (toVNF == null) continue;
+
+                    DataDependence dd = new DataDependence(fromVNF.getIDVector(), toVNF.getIDVector(), 0, 0, 0);
+
+                    // Random data size as in original code
+                    long datasize = NFVUtil.genLong2(NFVUtil.vnf_datasize_min,
+                            NFVUtil.vnf_datasize_max, NFVUtil.dist_vnf_datasize, NFVUtil.dist_vnf_datasize_mu);
+
+                    // If target is virtual end task, set data size to 0
+                    if (this.virtualEndTaskID != -1L && toId.equals(this.virtualEndTaskID)) {
+                        datasize = 0;
+                    }
+
+                    dd.setMaxDataSize(datasize);
+                    dd.setAveDataSize(datasize);
+                    dd.setMinDataSize(datasize);
+
+                    if (fromVNF.addDsuc(dd)) {
+                        if (sfc.getMaxData() <= dd.getMaxDataSize()) {
+                            sfc.setMaxData(dd.getMaxDataSize());
+                        }
+                        if (sfc.getMinData() >= dd.getMaxDataSize()) {
+                            sfc.setMinData(dd.getMaxDataSize());
+                        }
+                        toVNF.addDpred(dd);
+                    }
+                }
+            }
+        }
+
+        // Set Clusters
+        for (long i = 1; i <= vnfnum; i++) {
+            VNF vnf = vnfMap.get(i);
+            CustomIDSet vnfSet = new CustomIDSet();
+            vnfSet.add(vnf.getIDVector().get(1));
+            VNFCluster cluster = new VNFCluster(new Long(i), null, vnfSet, vnf.getWorkLoad());
+            vnf.setClusterID(cluster.getClusterID());
+            sfc.getVNFClusterMap().put(cluster.getClusterID(), cluster);
+        }
+
+        // Identify Start/End Sets
+        for (long i = 1; i <= vnfnum; i++) {
+            VNF vnf = vnfMap.get(i);
+            if (vnf.getDpredList().isEmpty()) {
+                sfc.getStartVNFSet().add(vnf.getIDVector().get(1));
+            }
+            if (vnf.getDsucList().isEmpty()) {
+                sfc.getEndVNFSet().add(vnf.getIDVector().get(1));
+            }
+        }
+
+        // Update Ancestors (Reachability)
+        CustomIDSet ansSet = new CustomIDSet();
+        Iterator<Long> endIt = sfc.getEndVNFSet().iterator();
+        while(endIt.hasNext()){
+            Long endID = endIt.next();
+            VNF endTask = vnfMap.get(endID);
+            ansSet.add(endID);
+            LinkedList<DataDependence> dpredList = endTask.getDpredList();
+            Iterator<DataDependence> dpredIte = dpredList.iterator();
+            while (dpredIte.hasNext()) {
+                DataDependence dd = dpredIte.next();
+                VNF dpredTask = sfc.findVNFByLastID(dd.getFromID().get(1));
+                this.updateAncestorFromFile(ansSet, sfc, dpredTask);
+            }
+        }
+
+        SFCGenerator.getIns().setSfc(sfc);
+        return sfc;
+    }
+
 
     /**
      * ファンクション間の依存関係を決めるためのメソッドです．
@@ -1105,7 +1333,37 @@ public class SFCGenerator {
 
     }
 
+    public CustomIDSet updateAncestorFromFile(CustomIDSet allSet, SFC sfc, VNF task) {
+        // ファイルから読み込む際のシングルトン回避用
+        //すでに自分がチェック済みであればそのままリターン
+        if (allSet.contains(task.getIDVector().get(1))) {
+            return allSet;
+        }
 
+        //以降はまだチェック済みでない場合の処理
+        //先行タスクの先祖たちをかき集めてからallSetへ自分を追加し，リターン
+
+        LinkedList<DataDependence> dpredList = task.getDpredList();
+        Iterator<DataDependence> dpredIte = dpredList.iterator();
+
+        while (dpredIte.hasNext()) {
+            DataDependence dd = dpredIte.next();
+            VNF dpredTask = sfc.findVNFByLastID(dd.getFromID().get(1));
+            //まずは先行タスクのIDを先祖に追加する．
+            task.getAncestorIDList().add(dpredTask.getIDVector().get(1));
+            //再帰CALL
+            this.updateAncestorFromFile(allSet, sfc, dpredTask);
+            HashSet<Long> newSet = dpredTask.getAncestorIDList();
+            task.getAncestorIDList().addAll(newSet);
+
+        }
+
+        //allSetへ自分を追加する．
+        allSet.add(task.getIDVector().get(1));
+
+        return allSet;
+
+    }
 
     public CustomIDSet updateAncestor(CustomIDSet allSet, VNF task) {
         //すでに自分がチェック済みであればそのままリターン
