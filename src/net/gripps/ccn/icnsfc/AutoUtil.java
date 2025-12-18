@@ -29,7 +29,6 @@ public class AutoUtil  implements Serializable {
 
     //public static String VNF_TOID = "vnf_toid";
 
-
     public static long sfc_vnf_num_min;
 
     public static long sfc_vnf_num_max;
