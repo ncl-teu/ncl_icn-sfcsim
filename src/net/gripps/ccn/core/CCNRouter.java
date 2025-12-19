@@ -1252,6 +1252,50 @@ public class CCNRouter extends AbstractNode {
                         AutoSFCMgr.getIns().saveUpdatedVCPU(sfc_int, startVCPU);
                         AutoSFCMgr.getIns().saveUpdatedVM(sfc_int, vm);
 
+                        //Interest sending in one-stroke
+                        //Startタスクが複数が複数ある場合には，ここで未解決のInteres(他のStartタスクへのInterest)は転送を続けなければならない．
+                        if(inOneStroke) {
+                            InterestPacket reDestinationInterest = null;
+                            Long executedVNFID = AutoSFCMgr.getIns().getPredVNFID(p.getPrefix());
+                            //実行したタスクに対するBundledInterestはここで除去する
+                            if(tmpBundledInterests.containsKey(executedVNFID)) {
+                                tmpBundledInterests.remove(executedVNFID);
+                            }
+                            //残りのタスクに対して要求を続ける
+                            //ReadyListが空であれば作成してから，１つ取り出す．
+                            if(tmpReadyList.isEmpty()) {
+                                tmpReadyList = AutoSFCMgr.getIns().createReadyList(p, tmpBundledInterests);
+                                AutoSFCMgr.getIns().sortReadyList(tmpReadyList, this, (SFC) p.getAppParams().get(AutoUtil.SFC_NAME));
+                            }
+                            Long newDestinationTask = tmpReadyList.poll();
+                            //新たな代表Interestを作成
+                            if(tmpBundledInterests.containsKey(newDestinationTask)) {
+                                reDestinationInterest = tmpBundledInterests.get(newDestinationTask).poll();
+                            }else {
+                                //ERROR: New destination task is not found in BundledInterests
+                            }
+
+                            if(reDestinationInterest != null) {
+                                //転送先を決める．かならずルータになる?
+                                String newVCPUPrefix = auto.findNextRouter(reDestinationInterest, this);
+                                //targetルータのIDを取得する．
+                                CCNRouter nextRouter = (CCNRouter) NCLWUtil.findVM(AutoSFCMgr.getIns().getEnv(), newVCPUPrefix);
+
+                                //履歴情報の更新
+                                AutoSFCMgr.getIns().updateSFCStatistics(p, this, false);
+                                //新しい代表Interestに対して更新
+                                reDestinationInterest.getHistoryList().getLast().setToID(nextRouter.getRouterID());
+                                reDestinationInterest.getHistoryList().getLast().setToType(CCNUtil.NODETYPE_ROUTER);
+                                //BundledInterestsに対しては更新しない．
+                                //代表となるInterestにReadyListとBundledInterests, SFCStatisticsを加える
+                                reDestinationInterest.getAppParams().put("inOneStroke", true);
+                                reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
+                                reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
+                                reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
+                                nextRouter.getInterestQueue().add(reDestinationInterest);
+                            }
+                        }
+
                     }else{
                         //そして，predVNFのVNFへInterestパケットを投げる．
                         //先行タスク用のprefixを生成する．
