@@ -7,6 +7,7 @@ import net.gripps.ccn.fibrouting.ChordOnBARouting;
 import net.gripps.ccn.fibrouting.LongestMatchRouting;
 import net.gripps.ccn.icnsfc.routing.AutoRouting;
 import net.gripps.ccn.icnsfc.routing.MWRouting;
+import net.gripps.ccn.icnsfc.routing.NoRouting;
 import net.gripps.cloud.core.ComputeHost;
 import net.gripps.cloud.core.VCPU;
 import net.gripps.cloud.core.VM;
@@ -79,6 +80,7 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
         this.routings[2] = new LongestMatchRouting();
         this.routings[3] = new AutoRouting();
         this.routings[4] = new MWRouting();
+        this.routings[5] = new NoRouting();
         this.usedRouting = this.routings[CCNUtil.ccn_routing_no];
         this.contentsQueue = new LinkedBlockingQueue<CCNContents>();
         this.receiver = new CCNDataReceiver(this.contentsQueue, this.bw*CCNUtil.ccn_actual_data_rate);
@@ -101,6 +103,7 @@ public class AbstractNode  extends VM  implements Runnable, Serializable {
         this.routings[2] = new LongestMatchRouting();
         this.routings[3] = new AutoRouting();
         this.routings[4] = new MWRouting();
+        this.routings[5] = new NoRouting();
 
         this.usedRouting = this.routings[CCNUtil.ccn_routing_no];
         this.contentsQueue = new LinkedBlockingQueue<CCNContents>();

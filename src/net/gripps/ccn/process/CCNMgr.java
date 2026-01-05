@@ -13,6 +13,7 @@ import net.gripps.ccn.icnsfc.AutoUtil;
 import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.icnsfc.routing.AutoRouting;
 import net.gripps.ccn.icnsfc.routing.MWRouting;
+import net.gripps.ccn.icnsfc.routing.NoRouting;
 import net.gripps.cloud.nfv.NFVUtil;
 import net.gripps.cloud.nfv.sfc.SFC;
 import net.gripps.cloud.nfv.sfc.VNF;
@@ -106,6 +107,7 @@ public class CCNMgr implements Runnable{
         this.routings[2] = new LongestMatchRouting(this.nodeMap, this.routerMap);
         this.routings[3] = new AutoRouting(this.nodeMap, this.routerMap);
         this.routings[4] = new MWRouting(this.nodeMap, this.routerMap);
+        this.routings[5] = new NoRouting(this.nodeMap, this.routerMap);
 
         /*************ここまで*************************/
         this.usedRouting = this.routings[CCNUtil.ccn_routing_no];
