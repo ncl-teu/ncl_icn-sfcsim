@@ -8,6 +8,7 @@ import net.gripps.ccn.icnsfc.process.AutoSFCMgr;
 import net.gripps.ccn.process.CCNMgr;
 import net.gripps.cloud.core.ComputeHost;
 import net.gripps.cloud.nfv.sfc.SFC;
+import net.gripps.cloud.nfv.sfc.VNF;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -381,6 +382,18 @@ public class CCNNode extends AbstractNode {
                         p.getAppParams().put("inOneStroke", true);
                         p.getAppParams().put("ReadyList", new LinkedList<String>());
                         p.getAppParams().put("BundledInterests", new HashMap<Long, LinkedList<InterestPacket>>());
+                    }
+                    //Duplicate scheduling with Grain+Budget mode
+                    if(AutoUtil.interest_duplicate_mode == 1 || AutoUtil.interest_duplicate_decision == 1){
+                        SFC sfc = (SFC) p.getAppParams().get(AutoUtil.SFC_NAME);
+                        VNF endVNF = sfc.findVNFByLastID(AutoSFCMgr.getIns().getPredVNFID(p.getPrefix()));
+                        AutoSFCMgr.getIns().calcAVGTlevel(endVNF, sfc, new HashMap<>(), 550L, 3000L);
+                        LinkedList<Long> CP = AutoSFCMgr.getIns().calcCriticalPath(endVNF, sfc);
+                        System.out.println("Critical Path:"+CP);
+                        double parallelism = AutoSFCMgr.getIns().calcParallelism(sfc, CP);
+                        LinkedList<Long> prioritizedCP = AutoSFCMgr.getIns().prioritizeCriticalPath(sfc, CP);
+                        HashMap delegatedBudget = AutoSFCMgr.getIns().delegateBudget(prioritizedCP, parallelism);
+                        p.getAppParams().put("Budget", delegatedBudget);
                     }
 
                     long minBW = Math.min(Math.min(this.getBw(), r.getBw()), p.getMinBW());

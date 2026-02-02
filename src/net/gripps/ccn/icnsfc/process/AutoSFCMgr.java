@@ -887,12 +887,48 @@ public class AutoSFCMgr implements Serializable {
 
     }
 
-    public boolean decideDupAssigning(VNF vnf, SFC sfc, HashMap<String, Long> statistics){
+    public boolean decideDupAssigning(InterestPacket packet, VNF vnf, SFC sfc, HashMap<String, Long> statistics){
         long avgBW = statistics.get("avgNodeBW");
         long avgMIPS = statistics.get("avgNodeMIPS");
         long avgHops = statistics.get("avgHopsPerInt");
         long avgDelay = statistics.get("avgDelayPerHop");
         long alloc = statistics.get("totalAlloc");
+
+        if(AutoUtil.interest_duplicate_mode == 1) {
+            // 1 CP上にTaskがいるか
+            HashMap<Long, Double> budget = (HashMap<Long, Double>) packet.getAppParams().get("Budget");
+            if(budget.containsKey(vnf.getIDVector().get(1))){
+                // 2 Grainが荒いかどうか
+                double grain = AutoSFCMgr.getIns().calcGrain(vnf, sfc, avgBW, avgMIPS);
+                if(grain >= 1) {
+                    // 3 Budgetが尽きていないかどうか
+                    if(budget.get(vnf.getIDVector().get(1)) >= 0.0) {
+                        // Budgetがあるので重複を試みる
+                        // このタスクを起点としたパスがそのまま重複されるため，先行するCPタスクのBudgetを一律減算
+                        for (Map.Entry<Long, Double> entry : budget.entrySet()) {
+                            System.out.println("DupAssigning: " + vnf.getIDVector() + ", " + budget);
+                            if ((entry.getValue() <= vnf.getIDVector().get(1))) {
+                                double newValue = entry.getValue() - 1.0;
+                                entry.setValue(newValue);
+                            }
+                        }
+                        System.out.println("DupAssigning: duplicated. " + vnf.getIDVector() + ", " + budget);
+                        return true;
+                    }else {
+                        // Budgetが尽きているので重複しない
+                        return false;
+                    }
+                }else {
+                    // Grainが細かいので重複の成功率が低そう
+                    return false;
+                }
+
+            }else {
+                // CP上にないので重複の効果が出なさそう
+                return false;
+            }
+
+        }
 
         // 1 後続タスクから見たCP上にTaskがいるか
         boolean onCP = false;
@@ -1039,6 +1075,119 @@ public class AutoSFCMgr implements Serializable {
         }
         criticalPath.add(vnf.getIDVector().get(1));
         return criticalPath;
+    }
+
+    public double calcParallelism(SFC sfc, LinkedList<Long> criticalPath) {
+        Long totalWorkload = sfc.getVnfMap().values().stream().mapToLong(VNF::getWorkLoad).sum();
+
+        Long criticalPathWorkload = 0L;
+        for(Long taskID : criticalPath){
+            criticalPathWorkload += sfc.getVnfMap().get(taskID).getWorkLoad();
+        }
+
+        return (double) totalWorkload / criticalPathWorkload;
+    }
+
+    public double calcGrain(VNF vnf, SFC sfc, long BW, long MIPS) {
+        double jointSetGrain = 0.0;
+        double forkSetGrain = 0.0;
+        // Joint set
+        LinkedList<DataDependence> dpredList = vnf.getDpredList();
+        if (dpredList.isEmpty()) {
+            jointSetGrain = -1.0;
+        } else {
+            Long minWorkload = 0L;
+            Long maxDatasize = 0L;
+            for (Iterator<DataDependence> dpredIte = dpredList.iterator(); dpredIte.hasNext(); ) {
+                DataDependence dpred = dpredIte.next();
+                VNF predVNF = sfc.findVNFByLastID(dpred.getFromID().get(1));
+                Long predWorkload = predVNF.getWorkLoad();
+                if (minWorkload == 0L || minWorkload > predWorkload) {
+                    minWorkload = predWorkload;
+                }
+                Long predDataSize = dpred.getMaxDataSize();
+                if (maxDatasize == 0L || maxDatasize < predDataSize) {
+                    maxDatasize = predDataSize;
+                }
+            }
+            if (minWorkload > vnf.getWorkLoad()) {
+                minWorkload = vnf.getWorkLoad();
+            }
+            jointSetGrain = ((double) minWorkload / MIPS) / ((double) maxDatasize / BW);
+        }
+        // Fork set
+        LinkedList<DataDependence> dsucList = vnf.getDsucList();
+        if (dsucList.isEmpty()) {
+            forkSetGrain = -1.0;
+        } else {
+            Long minWorkload = 0L;
+            Long maxDatasize = 0L;
+            for (Iterator<DataDependence> dsucIte = dsucList.iterator(); dsucIte.hasNext(); ) {
+                DataDependence dsuc = dsucIte.next();
+                VNF sucVNF = sfc.findVNFByLastID(dsuc.getToID().get(1));
+                Long sucWorkload = sucVNF.getWorkLoad();
+                if (minWorkload == 0L || minWorkload > sucWorkload) {
+                    minWorkload = sucWorkload;
+                }
+                Long sucDataSize = dsuc.getMaxDataSize();
+                if (maxDatasize == 0L || maxDatasize < sucDataSize) {
+                    maxDatasize = sucDataSize;
+                }
+            }
+            if (minWorkload > vnf.getWorkLoad()) {
+                minWorkload = vnf.getWorkLoad();
+            }
+            forkSetGrain = ((double) minWorkload / MIPS) / ((double) maxDatasize / BW);
+        }
+
+        if(jointSetGrain == -1.0 && forkSetGrain == -1.0){
+            return 0L;
+        }else if(jointSetGrain == -1.0){
+            return forkSetGrain;
+        }else if(forkSetGrain == -1.0){
+            return jointSetGrain;
+        }else {
+            return Math.min(jointSetGrain, forkSetGrain);
+        }
+    }
+
+    public LinkedList<Long> prioritizeCriticalPath(SFC sfc, LinkedList<Long> criticalPath){
+        //for static analysis, use a fair value for evaluation
+        long baseMIPS = 3000L;
+        long baseBW = 550L;
+
+        LinkedList<Long> sortingCP = criticalPath;
+        Comparator<Long> comparator = new Comparator<Long>() {
+            @Override
+            public int compare(Long CPtask1, Long CPtask2) {
+                double CPtask1Grain = calcGrain(sfc.findVNFByLastID(CPtask1), sfc, baseBW, baseMIPS);
+                double CPtask2Grain = calcGrain(sfc.findVNFByLastID(CPtask2), sfc, baseBW, baseMIPS);
+
+                return Double.valueOf(CPtask2Grain).compareTo(Double.valueOf(CPtask1Grain));
+            }
+        };
+        sortingCP.sort(comparator);
+        return sortingCP;
+    }
+
+    public HashMap<Long, Double> delegateBudget(LinkedList<Long> prioritizedCP, double parallelism){
+        double totalBudget = prioritizedCP.size() * parallelism;
+
+        HashMap<Long, Double> delegatedBudgetMap = new HashMap<>();
+        int[] weights = new int[prioritizedCP.size()];
+        double sumOfWeights = 0.0;
+
+        for (int i = 0; i < prioritizedCP.size(); i++) {
+            int rank = i + 1;
+            weights[i] = prioritizedCP.size() - rank + 1;
+            sumOfWeights += weights[i];
+        }
+
+        for(int i = 0; i < prioritizedCP.size(); i++){
+            double allocation = totalBudget * ((double) weights[i] / sumOfWeights);
+            delegatedBudgetMap.put(prioritizedCP.get(i), (double) Math.round(allocation));
+        }
+        return delegatedBudgetMap;
     }
 
     public double calcPredictSchedulingTime(Long avgHops, Long avgDelay, int cpNum) {

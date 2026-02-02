@@ -1022,6 +1022,10 @@ public class CCNRouter extends AbstractNode {
                     reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
                     reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                     reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
+                    //Budgetを引き継ぐ
+                    HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                    HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                    reDestinationInterest.getAppParams().put("Budget", newBudget);
                     nextRouter.getInterestQueue().add(reDestinationInterest);
                 }
             }
@@ -1292,6 +1296,10 @@ public class CCNRouter extends AbstractNode {
                                 reDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
                                 reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                                 reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
+                                //Budgetを引き継ぐ
+                                HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                                HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                                reDestinationInterest.getAppParams().put("Budget", newBudget);
                                 nextRouter.getInterestQueue().add(reDestinationInterest);
                             }
                         }
@@ -1342,7 +1350,7 @@ public class CCNRouter extends AbstractNode {
                         //重複割当を行うかどうかの判断
                         boolean isDupAssigning = false;
                         if(inOneStroke) {
-                            isDupAssigning = AutoSFCMgr.getIns().decideDupAssigning(predVNF, sfc_int, (HashMap<String, Long>) p.getAppParams().get("SFCStatistics"));
+                            isDupAssigning = AutoSFCMgr.getIns().decideDupAssigning(p, predVNF, sfc_int, (HashMap<String, Long>) p.getAppParams().get("SFCStatistics"));
                             if(AutoUtil.interest_duplicate_mode == 0) {
                                 isDupAssigning = false;
                             }
@@ -1390,6 +1398,10 @@ public class CCNRouter extends AbstractNode {
                             newHistory.setToType(CCNUtil.NODETYPE_ROUTER);
                             //SFCStatisticsを引き継ぎ，付け加える
                             newInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
+                            //Budgetを引き継ぐ
+                            HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                            HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                            newInterest.getAppParams().put("Budget", newBudget);
 
                             nextRouter.getInterestQueue().add(newInterest);
 
@@ -1440,6 +1452,10 @@ public class CCNRouter extends AbstractNode {
                                 newDestinationInterest.getAppParams().put("ReadyList", tmpReadyList);
                                 newDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                                 newDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
+                                //Budgetを引き継ぐ
+                                HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                                HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                                newDestinationInterest.getAppParams().put("Budget", newBudget);
                                 nextRouter.getInterestQueue().add(newDestinationInterest);
                             }
                         }
