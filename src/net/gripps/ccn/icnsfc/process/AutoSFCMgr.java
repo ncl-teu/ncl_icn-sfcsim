@@ -906,13 +906,11 @@ public class AutoSFCMgr implements Serializable {
                         // Budgetがあるので重複を試みる
                         // このタスクを起点としたパスがそのまま重複されるため，先行するCPタスクのBudgetを一律減算
                         for (Map.Entry<Long, Double> entry : budget.entrySet()) {
-                            System.out.println("DupAssigning: " + vnf.getIDVector() + ", " + budget);
                             if ((entry.getValue() <= vnf.getIDVector().get(1))) {
                                 double newValue = entry.getValue() - 1.0;
                                 entry.setValue(newValue);
                             }
                         }
-                        System.out.println("DupAssigning: duplicated. " + vnf.getIDVector() + ", " + budget);
                         return true;
                     }else {
                         // Budgetが尽きているので重複しない

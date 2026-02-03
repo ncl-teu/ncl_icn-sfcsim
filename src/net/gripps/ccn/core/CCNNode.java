@@ -389,7 +389,6 @@ public class CCNNode extends AbstractNode {
                         VNF endVNF = sfc.findVNFByLastID(AutoSFCMgr.getIns().getPredVNFID(p.getPrefix()));
                         AutoSFCMgr.getIns().calcAVGTlevel(endVNF, sfc, new HashMap<>(), 550L, 3000L);
                         LinkedList<Long> CP = AutoSFCMgr.getIns().calcCriticalPath(endVNF, sfc);
-                        System.out.println("Critical Path:"+CP);
                         double parallelism = AutoSFCMgr.getIns().calcParallelism(sfc, CP);
                         LinkedList<Long> prioritizedCP = AutoSFCMgr.getIns().prioritizeCriticalPath(sfc, CP);
                         HashMap delegatedBudget = AutoSFCMgr.getIns().delegateBudget(prioritizedCP, parallelism);
