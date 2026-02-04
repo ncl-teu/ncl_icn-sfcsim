@@ -1183,7 +1183,7 @@ public class AutoSFCMgr implements Serializable {
 
         for(int i = 0; i < prioritizedCP.size(); i++){
             double allocation = totalBudget * ((double) weights[i] / sumOfWeights);
-            delegatedBudgetMap.put(prioritizedCP.get(i), (double) Math.round(allocation));
+            delegatedBudgetMap.put(prioritizedCP.get(i), allocation);
         }
         return delegatedBudgetMap;
     }

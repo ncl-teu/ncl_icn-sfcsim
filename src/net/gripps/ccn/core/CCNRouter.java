@@ -1023,9 +1023,11 @@ public class CCNRouter extends AbstractNode {
                     reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                     reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                     //Budgetを引き継ぐ
-                    HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
-                    HashMap<Long, Double> newBudget = new HashMap<>(Budget);
-                    reDestinationInterest.getAppParams().put("Budget", newBudget);
+                    if(AutoUtil.interest_duplicate_decision == 1){
+                        HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                        HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                        reDestinationInterest.getAppParams().put("Budget", newBudget);
+                    }
                     nextRouter.getInterestQueue().add(reDestinationInterest);
                 }
             }
@@ -1297,9 +1299,11 @@ public class CCNRouter extends AbstractNode {
                                 reDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                                 reDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                                 //Budgetを引き継ぐ
-                                HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
-                                HashMap<Long, Double> newBudget = new HashMap<>(Budget);
-                                reDestinationInterest.getAppParams().put("Budget", newBudget);
+                                if(AutoUtil.interest_duplicate_decision == 1){
+                                    HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                                    HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                                    reDestinationInterest.getAppParams().put("Budget", newBudget);
+                                }
                                 nextRouter.getInterestQueue().add(reDestinationInterest);
                             }
                         }
@@ -1399,9 +1403,11 @@ public class CCNRouter extends AbstractNode {
                             //SFCStatisticsを引き継ぎ，付け加える
                             newInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                             //Budgetを引き継ぐ
-                            HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
-                            HashMap<Long, Double> newBudget = new HashMap<>(Budget);
-                            newInterest.getAppParams().put("Budget", newBudget);
+                            if(AutoUtil.interest_duplicate_decision == 1) {
+                                HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                                HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                                newInterest.getAppParams().put("Budget", newBudget);
+                            }
 
                             nextRouter.getInterestQueue().add(newInterest);
 
@@ -1453,9 +1459,11 @@ public class CCNRouter extends AbstractNode {
                                 newDestinationInterest.getAppParams().put("BundledInterests", tmpBundledInterests);
                                 newDestinationInterest.getAppParams().put("SFCStatistics", p.getAppParams().get("SFCStatistics"));
                                 //Budgetを引き継ぐ
-                                HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
-                                HashMap<Long, Double> newBudget = new HashMap<>(Budget);
-                                newDestinationInterest.getAppParams().put("Budget", newBudget);
+                                if(AutoUtil.interest_duplicate_decision == 1) {
+                                    HashMap<Long, Double> Budget = (HashMap<Long, Double>) p.getAppParams().get("Budget");
+                                    HashMap<Long, Double> newBudget = new HashMap<>(Budget);
+                                    newDestinationInterest.getAppParams().put("Budget", newBudget);
+                                }
                                 nextRouter.getInterestQueue().add(newDestinationInterest);
                             }
                         }
