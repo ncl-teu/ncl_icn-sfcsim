@@ -898,9 +898,9 @@ public class AutoSFCMgr implements Serializable {
             // 1 CP上にTaskがいるか
             HashMap<Long, Double> budget = (HashMap<Long, Double>) packet.getAppParams().get("Budget");
             if(budget.containsKey(vnf.getIDVector().get(1))){
-                // 2 Grainが荒いかどうか
+                // 2 (未定義なのでスキップ) Grainが荒いかどうか
                 double grain = AutoSFCMgr.getIns().calcGrain(vnf, sfc, avgBW, avgMIPS);
-                if(grain >= 1) {
+                if(grain >= 0) {
                     // 3 Budgetが尽きていないかどうか
                     if(budget.get(vnf.getIDVector().get(1)) >= 0.0) {
                         // Budgetがあるので重複を試みる
